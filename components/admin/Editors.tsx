@@ -1,0 +1,152 @@
+'use client';
+import { useState } from 'react';
+import { Dialog } from '@/components/ui';
+import { useTournament } from '@/components/TournamentProvider';
+import { resolveSlot, slotName, sports, teamName } from '@/lib/tournament';
+import type { Award, Match, Player, Rule } from '@/lib/types';
+
+const enc = encodeURIComponent;
+
+function Actions({ onDelete, saving }: { onDelete?: () => void; saving: boolean }) {
+  return (
+    <div className="editor-actions full">
+      <button className="btn" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
+      {onDelete && <button className="btn secondary danger" type="button" disabled={saving} onClick={onDelete}>Delete</button>}
+    </div>
+  );
+}
+
+const TeamSelect = ({ value, onChange, allowTbd = true }: { value: string; onChange: (v: string) => void; allowTbd?: boolean }) => (
+  <select className="select" name="team" value={value} onChange={e => onChange(e.target.value)}>
+    <option value="BI">MMX Wizardz</option><option value="GL">Metro Hawks</option>{allowTbd && <option value="">TBD</option>}
+  </select>
+);
+
+export function MatchEditor({ match, defaults, onClose }: { match?: Match; defaults?: Partial<Match>; onClose: () => void }) {
+  const { db, call, saving } = useTournament();
+  const [m, setM] = useState<Match>(match ? { ...match } : {
+    id: '', sport: 'Badminton', category: '', round: 'Round 1', roundOrder: 1, date: '', time: '', venue: '', p1: '', p2: '', status: 'scheduled', winner: '', score: '', ...defaults,
+  });
+  const set = (k: keyof Match) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setM({ ...m, [k]: k === 'roundOrder' ? Number(e.target.value) : e.target.value });
+  const earlier = db.matches.filter(x => x.id !== m.id && x.sport === m.sport && x.category === m.category && (x.roundOrder || 1) < (m.roundOrder || 1));
+  const players = db.players.slice().sort((a, b) => a.name.localeCompare(b.name));
+  const slot = (k: 'p1' | 'p2') => (
+    <select className="select" name={k} value={m[k]} onChange={set(k)}>
+      <option value="">TBD</option><option value="BYE">BYE</option>
+      <optgroup label="Participants / pairs">{players.map(p => <option key={p.id} value={p.id}>{p.name} ({p.team ? teamName(p.team) : 'TBD'})</option>)}</optgroup>
+      <optgroup label="Winner of an earlier match">{earlier.map(x => <option key={x.id} value={'winner:' + x.id}>Winner · {x.round} · {slotName(db, x.p1)} vs {slotName(db, x.p2)}</option>)}</optgroup>
+    </select>
+  );
+  const winners = [...new Set([m.p1, m.p2].map(v => resolveSlot(db, v)).filter(v => v && v !== 'BYE' && !v.startsWith('winner:')))];
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (await call(match ? 'PUT' : 'POST', match ? `/api/matches/${enc(match.id)}` : '/api/matches', m)) onClose();
+  };
+  const del = async () => {
+    if (!match || !confirm('Delete this match from the shared schedule?')) return;
+    if (await call('DELETE', `/api/matches/${enc(match.id)}`)) onClose();
+  };
+  return (
+    <Dialog title={match ? 'Edit match' : 'Add match'} onClose={onClose}>
+      <form className="formgrid" onSubmit={submit}>
+        <label className="field">Sport<select className="select" name="sport" value={m.sport} onChange={set('sport')}>{sports.map(s => <option key={s}>{s}</option>)}</select></label>
+        <label className="field">Category<input className="input" name="category" value={m.category} onChange={set('category')} required placeholder="Under 12 Girls" list="category-list" /></label>
+        <datalist id="category-list">{[...new Set(db.matches.filter(x => x.sport === m.sport).map(x => x.category))].map(c => <option key={c} value={c} />)}</datalist>
+        <label className="field">Round<input className="input" name="round" value={m.round} onChange={set('round')} required /></label>
+        <label className="field">Round order<input className="input" type="number" name="roundOrder" min={1} max={20} value={m.roundOrder || 1} onChange={set('roundOrder')} required /></label>
+        <label className="field">Date<input className="input" type="date" name="date" value={m.date} onChange={set('date')} /></label>
+        <label className="field">Time<input className="input" type="time" name="time" value={m.time} onChange={set('time')} /></label>
+        <label className="field full">Venue<input className="input" name="venue" value={m.venue} onChange={set('venue')} placeholder="Court / hall" /></label>
+        <label className="field">Participant 1{slot('p1')}</label>
+        <label className="field">Participant 2{slot('p2')}</label>
+        <label className="field">Status<select className="select" name="status" value={m.status} onChange={set('status')}><option value="scheduled">Scheduled</option><option value="completed">Completed</option><option value="bye">Bye / advance</option></select></label>
+        <label className="field">Winner
+          <select className="select" name="winner" value={m.winner} onChange={set('winner')} disabled={m.status !== 'completed'}>
+            <option value="">No result yet</option>{winners.map(v => <option key={v} value={v}>{slotName(db, v)}</option>)}
+          </select>
+        </label>
+        <label className="field full">Score / notes<input className="input" name="score" value={m.score} onChange={set('score')} placeholder="e.g. 21–15, 21–18" /></label>
+        <p className="mini full">Changing participants or the winner clears results of later rounds that depend on this match.</p>
+        <Actions saving={saving} onDelete={match ? del : undefined} />
+      </form>
+    </Dialog>
+  );
+}
+
+export function PlayerEditor({ player, onClose }: { player?: Player; onClose: () => void }) {
+  const { db, call, saving } = useTournament();
+  const [p, setP] = useState({ name: player?.name || '', flat: player?.flat || '', team: player?.team ?? 'BI' });
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (await call(player ? 'PUT' : 'POST', player ? `/api/players/${enc(player.id)}` : '/api/players', p)) onClose();
+  };
+  const del = async () => {
+    if (!player) return;
+    const used = db.matches.filter(m => [m.p1, m.p2, m.winner].includes(player.id)).length;
+    if (!confirm(used ? `${player.name} is in ${used} match(es). Their slots will become TBD and dependent results will be cleared. Delete?` : `Delete ${player.name}?`)) return;
+    if (await call('DELETE', `/api/players/${enc(player.id)}`)) onClose();
+  };
+  return (
+    <Dialog title={player ? 'Edit participant' : 'Add participant'} onClose={onClose}>
+      <form className="formgrid" onSubmit={submit}>
+        <label className="field full">Name / pair<input className="input" name="name" value={p.name} onChange={e => setP({ ...p, name: e.target.value })} required placeholder="Resident name" /></label>
+        <label className="field">Flat / Unit<input className="input" name="flat" value={p.flat} onChange={e => setP({ ...p, flat: e.target.value })} placeholder="e.g. 212C" /></label>
+        <label className="field">Team<TeamSelect value={p.team} onChange={team => setP({ ...p, team: team as Player['team'] })} /></label>
+        <Actions saving={saving} onDelete={player ? del : undefined} />
+      </form>
+    </Dialog>
+  );
+}
+
+export function AwardEditor({ award, onClose }: { award?: Award; onClose: () => void }) {
+  const { db, call, saving } = useTournament();
+  const first = db.rules[0];
+  const [a, setA] = useState({ sport: award?.sport || 'Table Tennis', category: award?.category || '', team: (award?.team || 'BI') as Award['team'], place: award?.place || first?.place || 'Champion', points: award?.points ?? first?.points ?? 10 });
+  const setPlace = (place: string) => {
+    const rule = db.rules.find(r => r.place === place);
+    setA({ ...a, place, points: rule ? rule.points : a.points });
+  };
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (await call(award ? 'PUT' : 'POST', award ? `/api/awards/${enc(award.id)}` : '/api/awards', a)) onClose();
+  };
+  const del = async () => {
+    if (!award || !confirm('Remove these team points?')) return;
+    if (await call('DELETE', `/api/awards/${enc(award.id)}`)) onClose();
+  };
+  return (
+    <Dialog title={award ? 'Edit team points' : 'Award team points'} onClose={onClose}>
+      <form className="formgrid" onSubmit={submit}>
+        <label className="field">Sport<select className="select" name="sport" value={a.sport} onChange={e => setA({ ...a, sport: e.target.value })}>{sports.map(s => <option key={s}>{s}</option>)}</select></label>
+        <label className="field">Category<input className="input" name="category" value={a.category} onChange={e => setA({ ...a, category: e.target.value })} required placeholder="Ladies Singles" /></label>
+        <label className="field">Team<TeamSelect value={a.team} onChange={team => setA({ ...a, team: team as Award['team'] })} allowTbd={false} /></label>
+        <label className="field">Placement<input className="input" name="place" list="place-list" value={a.place} onChange={e => setPlace(e.target.value)} required /></label>
+        <datalist id="place-list">{db.rules.map(r => <option key={r.place} value={r.place} />)}</datalist>
+        <label className="field full">Points<input className="input" name="points" type="number" min={0} value={a.points} onChange={e => setA({ ...a, points: Number(e.target.value) })} required /></label>
+        <Actions saving={saving} onDelete={award ? del : undefined} />
+      </form>
+    </Dialog>
+  );
+}
+
+export function RuleEditor({ rule, onClose }: { rule?: Rule; onClose: () => void }) {
+  const { call, saving } = useTournament();
+  const [r, setR] = useState({ place: rule?.place || '', points: rule?.points ?? 0 });
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (await call(rule ? 'PUT' : 'POST', rule ? `/api/rules/${enc(rule.place)}` : '/api/rules', r)) onClose();
+  };
+  const del = async () => {
+    if (!rule || !confirm(`Delete the "${rule.place}" rule? Existing awards keep their points.`)) return;
+    if (await call('DELETE', `/api/rules/${enc(rule.place)}`)) onClose();
+  };
+  return (
+    <Dialog title={rule ? 'Edit points rule' : 'Add points rule'} onClose={onClose}>
+      <form className="formgrid" onSubmit={submit}>
+        <label className="field">Placement<input className="input" name="place" value={r.place} onChange={e => setR({ ...r, place: e.target.value })} required placeholder="e.g. Semi-finalist" /></label>
+        <label className="field">Points<input className="input" name="points" type="number" min={0} value={r.points} onChange={e => setR({ ...r, points: Number(e.target.value) })} required /></label>
+        <Actions saving={saving} onDelete={rule ? del : undefined} />
+      </form>
+    </Dialog>
+  );
+}
