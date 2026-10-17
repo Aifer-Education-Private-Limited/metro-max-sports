@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: metro-max-sports
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install; npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Add your secrets in the Render dashboard:
+      # ADMIN_KEY, GOOGLE_SHEET_ID, GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_PRIVATE_KEY
