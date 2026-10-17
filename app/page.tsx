@@ -1,6 +1,7 @@
 'use client';
 /* eslint-disable @next/next/no-img-element */
 import Link from 'next/link';
+import { useState } from 'react';
 import { CheerButton, FixtureCard, Header, SlotLink } from '@/components/ui';
 import { useTournament } from '@/components/TournamentProvider';
 import { fmt, points, si, slotName, sports } from '@/lib/tournament';
@@ -45,7 +46,7 @@ export default function Home() {
       </div>
       <div className="homepoints">
         <div className="card">
-          <div className="sectionhead"><h3>🏆 Overall Points Standings</h3><Link className="textlink" href="/points">Points details →</Link></div>
+          <div className="sectionhead"><h3>🏆 Overall Points Standings</h3><div className="score-actions"><ShareStandings wizardz={bi} hawks={gl} /><Link className="textlink" href="/points">Points details →</Link></div></div>
           <div className="scoreboard">
             <div className="scoreteam"><img className="standing-logo" src="/brand/mmx-wizardz.webp" alt="MMX Wizardz logo" width={76} height={76} /><div className="big">{bi}<small className="pts-label">pts</small></div><div className="name">MMX WIZARDZ</div></div>
             <b className="muted">VS</b>
@@ -98,5 +99,118 @@ function HappyPromo() {
       </div>
       <a className="happy-cta" href="https://happyschool.app/" target="_blank" rel="noopener">Explore Happy School ↗</a>
     </section>
+  );
+}
+
+function ShareStandings({ wizardz, hawks }: { wizardz: number; hawks: number }) {
+  const [open, setOpen] = useState(false);
+  const [sharing, setSharing] = useState(false);
+
+  async function shareCard() {
+    setSharing(true);
+    try {
+      const sources = ['/brand/mmx-wizardz.webp', '/brand/metro-hawks.webp', '/brand/happy-school.webp', '/brand/teekops.png'];
+      const images = await Promise.all(sources.map(src => new Promise<HTMLImageElement>((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = reject;
+        image.src = src;
+      })));
+      const canvas = document.createElement('canvas');
+      canvas.width = 1080;
+      canvas.height = 1080;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      const [wizardzLogo, hawksLogo, happyLogo, teekopsLogo] = images;
+      const fit = (image: HTMLImageElement, x: number, y: number, width: number, height: number) => {
+        const scale = Math.min(width / image.naturalWidth, height / image.naturalHeight);
+        const w = image.naturalWidth * scale, h = image.naturalHeight * scale;
+        ctx.drawImage(image, x + (width - w) / 2, y + (height - h) / 2, w, h);
+      };
+      ctx.fillStyle = '#f5faf6';
+      ctx.fillRect(0, 0, 1080, 1080);
+      ctx.fillStyle = '#123b3e';
+      ctx.fillRect(0, 0, 1080, 170);
+      ctx.fillStyle = '#f8b847';
+      ctx.font = '800 27px Arial';
+      ctx.fillText('★  METROMAX SPORTSFEST', 70, 75);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '700 42px Arial';
+      ctx.fillText('OVERALL POINTS STANDINGS', 70, 130);
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.roundRect(55, 210, 970, 520, 34);
+      ctx.fill();
+      fit(wizardzLogo, 150, 270, 190, 190);
+      fit(hawksLogo, 740, 270, 190, 190);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#24313b';
+      ctx.font = '800 105px Arial';
+      ctx.fillText(String(wizardz), 245, 575);
+      ctx.fillText(String(hawks), 835, 575);
+      ctx.font = '700 22px Arial';
+      ctx.fillText('MMX WIZARDZ', 245, 635);
+      ctx.fillText('METRO HAWKS', 835, 635);
+      ctx.fillStyle = '#657a80';
+      ctx.font = '700 24px Arial';
+      ctx.fillText('VS', 540, 480);
+      ctx.fillStyle = '#087f83';
+      ctx.fillRect(95, 680, 445, 12);
+      ctx.fillStyle = '#f3b63f';
+      ctx.fillRect(540, 680, 445, 12);
+      ctx.fillStyle = '#fff6df';
+      ctx.beginPath();
+      ctx.roundRect(55, 770, 970, 245, 28);
+      ctx.fill();
+      ctx.textAlign = 'left';
+      fit(happyLogo, 90, 805, 330, 110);
+      ctx.fillStyle = '#335657';
+      ctx.font = '600 21px Arial';
+      ctx.fillText('Personalized 1:1 learning for Grades 1–12', 92, 955);
+      fit(teekopsLogo, 710, 810, 240, 125);
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#335657';
+      ctx.font = '700 18px Arial';
+      ctx.fillText('Website by TeekOps · Tech Done Right.', 830, 970);
+      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
+      if (!blob) return;
+      const file = new File([blob], 'metromax-sportsfest-standings.png', { type: 'image/png' });
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ title: 'Metromax SportsFest standings', text: `MMX Wizardz ${wizardz} – ${hawks} Metro Hawks`, files: [file] });
+      } else {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = file.name;
+        link.click();
+        URL.revokeObjectURL(link.href);
+      }
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  return (
+    <>
+      <button className="share-score-btn" type="button" onClick={() => setOpen(true)}>Share score</button>
+      {open && <div className="share-modal" role="dialog" aria-modal="true" aria-labelledby="share-title" onClick={() => setOpen(false)}>
+        <div className="share-dialog" onClick={event => event.stopPropagation()}>
+          <button className="share-close" type="button" aria-label="Close share preview" onClick={() => setOpen(false)}>×</button>
+          <div className="share-preview">
+            <div className="share-brand"><span>★ METROMAX SPORTSFEST</span><strong id="share-title">Overall Points Standings</strong></div>
+            <div className="share-teams">
+              <div><img src="/brand/mmx-wizardz.webp" alt="MMX Wizardz" /><b>{wizardz}</b><span>MMX WIZARDZ</span></div>
+              <strong className="share-vs">VS</strong>
+              <div><img src="/brand/metro-hawks.webp" alt="Metro Hawks" /><b>{hawks}</b><span>METRO HAWKS</span></div>
+            </div>
+            <div className="share-sponsors">
+              <div><img src="/brand/happy-school.webp" alt="Happy School by Aifer" /><span>Personalized 1:1 learning</span></div>
+              <div><img src="/brand/teekops.png" alt="TeekOps" /><span>Tech Done Right.</span></div>
+            </div>
+          </div>
+          <p className="share-help">Share a polished image to WhatsApp, Instagram, or any supported app.</p>
+          <button className="btn share-now" type="button" disabled={sharing} onClick={shareCard}>{sharing ? 'Preparing image…' : 'Share standings image'}</button>
+        </div>
+      </div>}
+    </>
   );
 }

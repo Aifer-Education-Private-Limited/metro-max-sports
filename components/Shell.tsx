@@ -7,7 +7,7 @@ export const nav: [string, string, string][] = [
   ['/', '🏠', 'Home'], ['/matches', '📅', 'Matches'], ['/official', '🗓️', 'Fixtures'], ['/sports', '🏸', 'Sports'],
   ['/players', '🙂', 'Players'], ['/results', '🏆', 'Results'], ['/points', '⭐', 'Points'], ['/admin', '⚙️', 'Admin'],
 ];
-const more = ['/matches', '/sports', '/players', '/points', '/admin'];
+const more = nav.map(([href]) => href).filter(href => href !== '/');
 
 const active = (path: string, href: string) => (href === '/' ? path === '/' : path === href || (href === '/players' && path.startsWith('/players/')));
 
