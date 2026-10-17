@@ -97,7 +97,13 @@ function HappyPromo() {
         <p>One-to-one online tuition for Grades 1–12. Personalized learning for CBSE, ICSE and Kerala State Board students.</p>
         <div className="happy-tags"><span>1:1 attention</span><span>Live classes</span><span>Learn at your pace</span></div>
       </div>
-      <a className="happy-cta" href="https://happyschool.app/" target="_blank" rel="noopener">Explore Happy School ↗</a>
+      <div className="happy-actions">
+        <a className="happy-whatsapp" href="https://wa.me/919356100300?text=Hi%20Happy%20School%20team%2C%20I%20am%20from%20Metro%20Max%20and%20would%20like%20to%20know%20more%20about%20your%20classes%20and%20admission%20details." target="_blank" rel="noopener" aria-label="Contact Happy School on WhatsApp">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16.04 3A12.9 12.9 0 0 0 5.12 22.77L3.4 29l6.38-1.67A12.98 12.98 0 1 0 16.04 3Zm0 23.77c-1.92 0-3.8-.52-5.44-1.5l-.39-.23-3.79.99 1.01-3.69-.25-.38a10.73 10.73 0 1 1 8.86 4.81Zm5.89-8.04c-.32-.16-1.91-.94-2.21-1.05-.29-.11-.51-.16-.72.16-.22.32-.84 1.05-1.03 1.27-.19.21-.38.24-.7.08-.33-.16-1.37-.5-2.61-1.61a9.77 9.77 0 0 1-1.81-2.25c-.19-.32-.02-.5.14-.66.15-.14.33-.38.49-.57.16-.19.21-.32.32-.54.11-.21.05-.4-.03-.56-.08-.16-.72-1.73-.99-2.37-.26-.63-.53-.55-.72-.56h-.62c-.22 0-.57.08-.87.4-.29.33-1.13 1.11-1.13 2.7s1.16 3.13 1.32 3.34c.16.22 2.28 3.48 5.52 4.88.77.33 1.37.53 1.84.68.78.24 1.48.21 2.04.13.62-.09 1.91-.78 2.18-1.54.27-.75.27-1.4.19-1.54-.08-.13-.3-.21-.62-.37Z" /></svg>
+          WhatsApp us
+        </a>
+        <a className="happy-cta" href="https://happyschool.app/" target="_blank" rel="noopener">Explore Happy School ↗</a>
+      </div>
     </section>
   );
 }
