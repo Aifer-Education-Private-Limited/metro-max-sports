@@ -1,17 +1,17 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { AwardEditor, MatchEditor, PlayerEditor, RuleEditor } from '@/components/admin/Editors';
+import { AwardEditor, MatchEditor, PlayerEditor, RuleEditor, SportEditor } from '@/components/admin/Editors';
 import { Header, MatchFilters, SlotLink, tagClass } from '@/components/ui';
 import { useTournament } from '@/components/TournamentProvider';
 import { defaultFilter, filterMatches, fmt, playsIn, si, statusLabel, teamName } from '@/lib/tournament';
-import type { Award, Match, Player, Rule, Tournament } from '@/lib/types';
+import type { Award, Match, Player, Rule, Sport, Tournament } from '@/lib/types';
 
-type Tab = 'matches' | 'players' | 'awards' | 'rules' | 'backup';
+type Tab = 'matches' | 'players' | 'sports' | 'awards' | 'rules' | 'backup';
 type Editing =
-  | { kind: 'match'; item?: Match } | { kind: 'player'; item?: Player } | { kind: 'award'; item?: Award } | { kind: 'rule'; item?: Rule } | null;
+  | { kind: 'match'; item?: Match } | { kind: 'player'; item?: Player } | { kind: 'sport'; item?: Sport } | { kind: 'award'; item?: Award } | { kind: 'rule'; item?: Rule } | null;
 
-const tabs: [Tab, string][] = [['matches', 'Matches & Results'], ['players', 'Participants'], ['awards', 'Team Points'], ['rules', 'Points Rules'], ['backup', 'Backup & Restore']];
+const tabs: [Tab, string][] = [['matches', 'Matches & Results'], ['players', 'Participants'], ['sports', 'Sports'], ['awards', 'Team Points'], ['rules', 'Points Rules'], ['backup', 'Backup & Restore']];
 
 export default function Admin() {
   const { admin, adminConfigured, empty, ready, call, logout, refresh } = useTournament();
@@ -42,11 +42,13 @@ export default function Admin() {
       </div>
       {tab === 'matches' && <MatchesTab edit={item => setEditing({ kind: 'match', item })} />}
       {tab === 'players' && <PlayersTab edit={item => setEditing({ kind: 'player', item })} />}
+      {tab === 'sports' && <SportsTab edit={item => setEditing({ kind: 'sport', item })} />}
       {tab === 'awards' && <AwardsTab edit={item => setEditing({ kind: 'award', item })} />}
       {tab === 'rules' && <RulesTab edit={item => setEditing({ kind: 'rule', item })} />}
       {tab === 'backup' && <BackupTab />}
       {editing?.kind === 'match' && <MatchEditor match={editing.item} onClose={close} />}
       {editing?.kind === 'player' && <PlayerEditor player={editing.item} onClose={close} />}
+      {editing?.kind === 'sport' && <SportEditor sport={editing.item} onClose={close} />}
       {editing?.kind === 'award' && <AwardEditor award={editing.item} onClose={close} />}
       {editing?.kind === 'rule' && <RuleEditor rule={editing.item} onClose={close} />}
     </>
@@ -87,7 +89,7 @@ function MatchesTab({ edit }: { edit: (m?: Match) => void }) {
           <tbody>
             {ms.length ? ms.map(m => (
               <tr key={m.id}>
-                <td data-label="Match"><div className="mini">{si(m.sport)}{m.sport} · {m.category}</div><SlotLink id={m.p1} /> <span className="muted">vs</span> <SlotLink id={m.p2} /></td>
+                <td data-label="Match"><div className="mini">{si(m.sport, db)}{m.sport} · {m.category}</div><SlotLink id={m.p1} /> <span className="muted">vs</span> <SlotLink id={m.p2} /></td>
                 <td data-label="When">{fmt(m.date)}<div className="mini">{m.time || 'Time TBD'}</div></td>
                 <td data-label="Round">{m.round}</td>
                 <td data-label="Status"><span className={tagClass(m.status)}>{statusLabel(m.status)}</span></td>
@@ -124,6 +126,19 @@ function PlayersTab({ edit }: { edit: (p?: Player) => void }) {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+function SportsTab({ edit }: { edit: (sport?: Sport) => void }) {
+  const { db } = useTournament();
+  return (
+    <div className="card" style={{ maxWidth: 720 }}>
+      <div className="sectionhead"><div><h3>Sports ({db.sports.length})</h3><p className="muted" style={{ fontSize: 13 }}>Sports added here become available in matches, fixtures, filters, results and team points.</p></div><button className="btn" onClick={() => edit()}>+ Add sport</button></div>
+      {db.sports.map(sport => {
+        const matches = db.matches.filter(m => m.sport === sport.name).length;
+        return <div className="fixture" key={sport.id}><span style={{ fontSize: 24 }}>{sport.icon}</span><b>{sport.name}</b><span><span className="mini">{matches} matches</span> <button className="textlink" onClick={() => edit(sport)}>Edit</button></span></div>;
+      })}
     </div>
   );
 }

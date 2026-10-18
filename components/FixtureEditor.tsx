@@ -101,6 +101,8 @@ export default function FixtureEditor({ sports }: { sports: string[] }) {
   const [editing, setEditing] = useState<Match | null>(null);
   const [newCat, setNewCat] = useState<{ name: string; size: number; date: string } | null>(null);
   const [catName, setCatName] = useState('');
+  const sportOptions = useMemo(() => [...new Set([...sports, ...(data?.sports?.map(s => s.name) || [])])], [data?.sports, sports]);
+  useEffect(() => { if (sportOptions.length && !sportOptions.includes(sport)) setSport(sportOptions[0]); }, [sport, sportOptions]);
 
   const flash = (text: string, bad = false) => { setToast({ text, bad }); setTimeout(() => setToast(null), bad ? 6000 : 2500); };
 
@@ -216,8 +218,8 @@ export default function FixtureEditor({ sports }: { sports: string[] }) {
       )}
 
       <div className={s.sports}>
-        {sports.map(x => (
-          <button key={x} className={`${s.pill} ${x === sport ? s.active : ''}`} onClick={() => { setSport(x); setCategory(''); setSwapFrom(null); }}>{si(x)}{x}</button>
+        {sportOptions.map(x => (
+          <button key={x} className={`${s.pill} ${x === sport ? s.active : ''}`} onClick={() => { setSport(x); setCategory(''); setSwapFrom(null); }}>{si(x, data || undefined)}{x}</button>
         ))}
       </div>
 
@@ -311,7 +313,7 @@ export default function FixtureEditor({ sports }: { sports: string[] }) {
               <h3>{editing.round} · M{matchNo(editing.id)}</h3>
               <button className={s.iconBtn} onClick={() => setEditing(null)} aria-label="Close">✕</button>
             </div>
-            <p className={s.muted}>{si(editing.sport)}{editing.sport} · {editing.category}</p>
+            <p className={s.muted}>{si(editing.sport, data || undefined)}{editing.sport} · {editing.category}</p>
             {(['p1', 'p2'] as Side[]).map((side, i) => (
               <div key={side}>
                 <label className={s.label}>{i === 0 ? 'Player / pair 1' : 'Player / pair 2'}</label>

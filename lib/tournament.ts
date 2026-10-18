@@ -1,8 +1,13 @@
 import type { Match, Tournament } from './types';
 
-export const sports = ['Table Tennis', 'Badminton', 'Chess', 'Carroms'];
-export const sportIcon: Record<string, string> = { 'Table Tennis': '🏓', Badminton: '🏸', Chess: '♟️', Carroms: '🎯' };
-export const si = (n: string) => (sportIcon[n] || '🏅') + ' ';
+export const defaultSports = [
+  { id: 'table-tennis', name: 'Table Tennis', icon: '🏓' },
+  { id: 'badminton', name: 'Badminton', icon: '🏸' },
+  { id: 'chess', name: 'Chess', icon: '♟️' },
+  { id: 'carroms', name: 'Carroms', icon: '🎯' },
+];
+export const sportNames = (db: Tournament) => db.sports.map(s => s.name);
+export const si = (n: string, db?: Partial<Pick<Tournament, 'sports'>>) => ((db?.sports?.find(s => s.name === n)?.icon || defaultSports.find(s => s.name === n)?.icon || '🏅') + ' ');
 export const teamName = (t: string) => (t === 'BI' ? 'MMX Wizardz' : t === 'GL' ? 'Metro Hawks' : 'TBD');
 export const teamLogo: Record<string, string> = { BI: '/brand/mmx-wizardz.webp', GL: '/brand/metro-hawks.webp' };
 export const statusLabel = (s: string) => (s === 'completed' ? '✅ Done' : s === 'bye' ? 'Bye / advance' : '⏰ Coming up');

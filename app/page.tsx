@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { CheerButton, FixtureCard, Header, SlotLink } from '@/components/ui';
 import { useTournament } from '@/components/TournamentProvider';
-import { fmt, points, si, slotName, sports } from '@/lib/tournament';
+import { fmt, points, si, slotName } from '@/lib/tournament';
 
 export default function Home() {
   const { db } = useTournament();
@@ -14,7 +14,7 @@ export default function Home() {
   const bi = points(db, 'BI'), gl = points(db, 'GL');
   return (
     <>
-      <Header title="Welcome to SportsFest! 🎉" sub="See who is playing, when, and who won." action={<Link className="btn" href="/official">Official Fixtures →</Link>} />
+      <Header title="Welcome to Metromax Sports Season 16!" sub="See who is playing, when, and who won." action={<Link className="btn" href="/official">Official Fixtures →</Link>} />
       <div className="hero">
         <div>
           <div className="eyebrow">★ Metromax Sports Season XVI</div>
@@ -39,7 +39,7 @@ export default function Home() {
         <div className="sectionhead"><h3>🌟 Champion cheers</h3><Link className="textlink" href="/results">All results →</Link></div>
         {recent.length ? recent.map(m => (
           <div className="winner-tile" key={m.id}>
-            <div><span className="mini">{si(m.sport)}{m.sport} · {m.category}</span><strong><SlotLink id={m.winner} /> won!</strong><span className="mini">{m.score || m.round}</span></div>
+            <div><span className="mini">{si(m.sport, db)}{m.sport} · {m.category}</span><strong><SlotLink id={m.winner} /> won!</strong><span className="mini">{m.score || m.round}</span></div>
             <CheerButton who={slotName(db, m.winner)} />
           </div>
         )) : <p className="muted" style={{ fontSize: 13 }}>The celebration wall will light up when the first results are recorded.</p>}
@@ -58,7 +58,7 @@ export default function Home() {
       </div>
       <HappyPromo />
       <div className="stats">
-        {([['🙂 Participants / pairs', db.players.length, 'Across both teams'], ['📅 Matches', total, `In ${sports.length} sports`], ['✅ Matches Done', done, 'Results recorded'], ['⏰ Still to Play', total - done, 'Coming up soon']] as const).map(([l, n, f]) => (
+        {([['🙂 Participants / pairs', db.players.length, 'Across both teams'], ['📅 Matches', total, `In ${db.sports.length} sports`], ['✅ Matches Done', done, 'Results recorded'], ['⏰ Still to Play', total - done, 'Coming up soon']] as const).map(([l, n, f]) => (
           <div className="card stat" key={l}><div className="label">{l}</div><div className="number">{n}</div><div className="foot">{f}</div></div>
         ))}
       </div>
@@ -71,7 +71,7 @@ export default function Home() {
           <div className="card">
             <div className="sectionhead"><h3>✅ Latest Results</h3><Link className="textlink" href="/results">All results →</Link></div>
             {recent.length ? recent.map(m => (
-              <div className="resultrow" key={m.id}><div className="mini">{si(m.sport)}{m.sport} · {fmt(m.date)}</div><strong><SlotLink id={m.p1} /> vs <SlotLink id={m.p2} /></strong><span className="tag green">{slotName(db, m.winner)} won</span></div>
+              <div className="resultrow" key={m.id}><div className="mini">{si(m.sport, db)}{m.sport} · {fmt(m.date)}</div><strong><SlotLink id={m.p1} /> vs <SlotLink id={m.p2} /></strong><span className="tag green">{slotName(db, m.winner)} won</span></div>
             )) : <div className="empty">No results yet. Check back soon! 🌟</div>}
           </div>
         </div>

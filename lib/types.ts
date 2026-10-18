@@ -10,9 +10,10 @@ export interface Match {
 }
 export interface Award { id: string; sport: string; category: string; team: Team; place: string; points: number; [extra: string]: unknown }
 export interface Rule { place: string; points: number; [extra: string]: unknown }
+export interface Sport { id: string; name: string; icon: string; [extra: string]: unknown }
 
-export interface Tournament { players: Player[]; matches: Match[]; awards: Award[]; rules: Rule[] }
+export interface Tournament { players: Player[]; matches: Match[]; awards: Award[]; rules: Rule[]; sports: Sport[] }
 export type Collection = keyof Tournament;
-export const COLLECTIONS: Collection[] = ['players', 'matches', 'awards', 'rules'];
+export const COLLECTIONS: Collection[] = ['players', 'matches', 'awards', 'rules', 'sports'];
 
 export interface TournamentSnapshot { data: Tournament; revision: number; empty: boolean; error?: string }

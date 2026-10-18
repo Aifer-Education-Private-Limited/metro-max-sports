@@ -55,7 +55,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           <div className="topbar">
             <Image className="mobile-brand" src="/brand/metromax-sports.jpg" alt="Metro Max Sports" width={42} height={42} priority />
             <div className="crumb">METROMAX / <strong>{current}</strong></div>
-            <div className="top-actions"><span className="pill live"><span className="dot" /> Tournament Hub</span><span className="pill">★ SportsFest</span></div>
+            <div className="top-actions"><a className="top-happy" href="https://happyschool.app/" target="_blank" rel="noopener" aria-label="Visit Happy School"><Image src="/brand/happy-school.webp" alt="Happy School by Aifer" width={112} height={43} /></a><span className="pill">★ SportsFest</span></div>
           </div>
           <div className="content">
             {error && <div className="notice">{error} <button className="textlink" onClick={() => refresh(true)}>Retry</button></div>}

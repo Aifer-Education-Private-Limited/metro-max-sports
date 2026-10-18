@@ -4,7 +4,7 @@ import path from 'path';
 import type { Collection, Tournament } from '../types';
 import { ConflictError, type Store } from './types';
 
-const empty = (): Tournament => ({ players: [], matches: [], awards: [], rules: [] });
+const empty = (): Tournament => ({ players: [], matches: [], awards: [], rules: [], sports: [] });
 
 /** Development store: a JSON file on disk. Not suitable for serverless hosting. */
 export function fileStore(): Store {

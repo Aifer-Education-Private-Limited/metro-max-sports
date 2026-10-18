@@ -4,7 +4,7 @@ export type Match = {
   date?: string; time?: string; venue?: string; p1: string; p2: string;
   status: string; winner?: string; score?: string; sourceSheet?: number; [k: string]: unknown;
 };
-export type Tournament = { players: Player[]; matches: Match[]; [k: string]: unknown };
+export type Tournament = { players: Player[]; matches: Match[]; sports?: { id: string; name: string; icon: string }[]; [k: string]: unknown };
 export type Round = { name: string; order: number; matches: Match[] };
 export type Side = 'p1' | 'p2';
 export type SlotRef = { id: string; side: Side };

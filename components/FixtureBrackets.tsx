@@ -12,7 +12,7 @@ type Match = {
   date?: string; time?: string; venue?: string; p1: string; p2: string;
   status: string; winner?: string; score?: string; sourceSheet?: number;
 };
-type Data = { players: Player[]; matches: Match[] };
+type Data = { players: Player[]; matches: Match[]; sports?: { id: string; name: string; icon: string }[] };
 type Round = { name: string; order: number; matches: Match[] };
 
 const teamCode = (t?: string) => (t === 'BI' ? 'WZ' : t ? 'HK' : '');
@@ -23,6 +23,8 @@ export default function FixtureBrackets({ sports }: { sports: string[] }) {
   const [error, setError] = useState('');
   const [sport, setSport] = useState(sports.includes('Badminton') ? 'Badminton' : sports[0]);
   const [category, setCategory] = useState('');
+  const sportOptions = useMemo(() => [...new Set([...sports, ...(data?.sports?.map(s => s.name) || [])])], [data?.sports, sports]);
+  useEffect(() => { if (sportOptions.length && !sportOptions.includes(sport)) setSport(sportOptions[0]); }, [sport, sportOptions]);
 
   const load = useCallback(async () => {
     try {
@@ -133,9 +135,9 @@ export default function FixtureBrackets({ sports }: { sports: string[] }) {
   return (
     <div className={s.wrap}>
       <div className={s.sports} role="tablist" aria-label="Sport">
-        {sports.map(x => (
+        {sportOptions.map(x => (
           <button key={x} role="tab" aria-selected={x === sport} className={`${s.pill} ${x === sport ? s.active : ''}`} onClick={() => { setSport(x); setCategory(''); }}>
-            {si(x)}{x}
+            {si(x, data || undefined)}{x}
           </button>
         ))}
       </div>
@@ -152,7 +154,7 @@ export default function FixtureBrackets({ sports }: { sports: string[] }) {
           </div>
 
           <div className={s.title}>
-            <h3>{si(sport)}{sport} · {activeCategory}</h3>
+            <h3>{si(sport, data || undefined)}{sport} · {activeCategory}</h3>
             <div className={s.chips}>
               <span className={s.chip}>{stats.total} matches</span>
               <span className={s.chip}>{stats.done} played</span>

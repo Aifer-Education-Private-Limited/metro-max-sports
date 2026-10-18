@@ -1,24 +1,33 @@
 import 'server-only';
 import { randomUUID } from 'crypto';
 import seed from '@/data/seed.json';
-import { clearDownstream } from './tournament';
+import { clearDownstream, defaultSports } from './tournament';
 import { getStore } from './store';
 import { ConflictError } from './store/types';
-import { COLLECTIONS, type Award, type Collection, type Match, type MatchStatus, type Player, type Rule, type Team, type Tournament, type TournamentSnapshot } from './types';
+import { COLLECTIONS, type Award, type Collection, type Match, type MatchStatus, type Player, type Rule, type Sport, type Team, type Tournament, type TournamentSnapshot } from './types';
 
 export class ApiError extends Error {
   constructor(message: string, public status = 400) { super(message); }
 }
 
-export const seedData = () => structuredClone(seed) as Tournament;
-const isEmpty = (d: Tournament) => COLLECTIONS.every(c => !d[c].length);
+const normalize = (data: Tournament): Tournament => {
+  if (!Array.isArray(data.sports) || !data.sports.length) {
+    const used = new Set([...data.matches.map(m => m.sport), ...data.awards.map(a => a.sport)]);
+    data.sports = structuredClone(defaultSports);
+    for (const name of used) if (name && !data.sports.some(s => s.name === name)) data.sports.push({ id: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'), name, icon: '🏅' });
+  }
+  return data;
+};
+export const seedData = () => normalize(structuredClone(seed) as Tournament);
+const isEmpty = (d: Tournament) => ['players', 'matches', 'awards', 'rules'].every(c => !(d[c as Exclude<Collection, 'sports'>] as unknown[]).length);
 
 let cache: { snap: TournamentSnapshot; at: number } | null = null;
 const CACHE_MS = Number(process.env.READ_CACHE_MS ?? 3000);
 
 export async function getSnapshot(fresh = false): Promise<TournamentSnapshot> {
   if (!fresh && cache && Date.now() - cache.at < CACHE_MS) return cache.snap;
-  const { data, revision } = await getStore().load();
+  const loaded = await getStore().load();
+  const data = normalize(loaded.data), revision = loaded.revision;
   const empty = isEmpty(data);
   const snap = { data: empty ? seedData() : data, revision, empty };
   cache = { snap, at: Date.now() };
@@ -32,7 +41,8 @@ let queue: Promise<unknown> = Promise.resolve();
 export function mutate(fn: (db: Tournament) => void, opts: { allowEmpty?: boolean; expectedRevision?: number } = {}): Promise<TournamentSnapshot> {
   const run = async () => {
     for (let attempt = 0; ; attempt++) {
-      const { data, revision } = await getStore().load();
+      const loaded = await getStore().load();
+      const data = normalize(loaded.data), revision = loaded.revision;
       if (opts.expectedRevision !== undefined && revision !== opts.expectedRevision) throw new ApiError('Someone else changed the fixtures meanwhile. Press “Discard” to load their version, then redo your edit.', 409);
       if (isEmpty(data) && !opts.allowEmpty) throw new ApiError('The database is empty. Load the built-in schedule from Admin first.', 409);
       const next = structuredClone(data);
@@ -77,6 +87,24 @@ export interface CollectionSpec<T> {
   beforeDelete?(db: Tournament, item: T): void;
 }
 
+export const sports: CollectionSpec<Sport> = {
+  collection: 'sports', key: 'id', newId: () => 'sport-' + randomUUID(),
+  build(b, db, ex) {
+    const name = required(str(b.name, 50), 'Sport name');
+    if (db.sports.some(s => s.name.toLowerCase() === name.toLowerCase() && s.id !== ex?.id)) throw new ApiError('A sport with this name already exists.', 409);
+    return { ...ex, id: ex?.id || '', name, icon: str(b.icon, 12) || '🏅' };
+  },
+  afterUpdate(db, before, after) {
+    if (before.name === after.name) return;
+    db.matches.forEach(m => { if (m.sport === before.name) m.sport = after.name; });
+    db.awards.forEach(a => { if (a.sport === before.name) a.sport = after.name; });
+  },
+  beforeDelete(db, sport) {
+    const uses = db.matches.filter(m => m.sport === sport.name).length + db.awards.filter(a => a.sport === sport.name).length;
+    if (uses) throw new ApiError(`This sport is used by ${uses} match or points record(s). Remove those records before deleting it.`, 409);
+  },
+};
+
 export const players: CollectionSpec<Player> = {
   collection: 'players', key: 'id', newId: () => 'participant-' + randomUUID(),
   build: (b, _db, ex) => ({ ...ex, id: ex?.id || '', name: required(str(b.name), 'Name'), flat: str(b.flat, 50), team: team(b.team) }),
@@ -111,8 +139,10 @@ export const matches: CollectionSpec<Match> = {
     const date = str(b.date, 10), time = str(b.time, 5);
     if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new ApiError('Date must be YYYY-MM-DD.');
     if (time && !/^\d{2}:\d{2}$/.test(time)) throw new ApiError('Time must be HH:mm.');
+    const sport = required(str(b.sport, 50), 'Sport');
+    if (!db.sports.some(s => s.name === sport)) throw new ApiError('Choose a sport configured in Admin.');
     return {
-      ...ex, id: ex?.id || '', sport: required(str(b.sport, 50), 'Sport'), category: required(str(b.category), 'Category'),
+      ...ex, id: ex?.id || '', sport, category: required(str(b.category), 'Category'),
       round: required(str(b.round, 100), 'Round'), roundOrder: num(b.roundOrder ?? 1, 'Round order', 1, 20), date, time,
       venue: str(b.venue, 200), p1, p2, status, winner, score: str(b.score, 500), sourceSheet: ex?.sourceSheet ?? '',
     };
@@ -127,10 +157,14 @@ export const matches: CollectionSpec<Match> = {
 
 export const awards: CollectionSpec<Award> = {
   collection: 'awards', key: 'id', newId: () => 'award-' + randomUUID(),
-  build: (b, _db, ex) => ({
-    ...ex, id: ex?.id || '', sport: required(str(b.sport, 50), 'Sport'), category: required(str(b.category), 'Category'),
-    team: team(b.team, false), place: required(str(b.place, 100), 'Placement'), points: num(b.points, 'Points'),
-  }),
+  build(b, db, ex) {
+    const sport = required(str(b.sport, 50), 'Sport');
+    if (!db.sports.some(s => s.name === sport)) throw new ApiError('Choose a sport configured in Admin.');
+    return {
+      ...ex, id: ex?.id || '', sport, category: required(str(b.category), 'Category'),
+      team: team(b.team, false), place: required(str(b.place, 100), 'Placement'), points: num(b.points, 'Points'),
+    };
+  },
 };
 
 export const rules: CollectionSpec<Rule> = {
@@ -178,8 +212,8 @@ export function deleteItem<T>(spec: CollectionSpec<T>, id: string) {
 
 export function validateTournament(x: unknown): Tournament {
   const d = x as Tournament;
-  if (!d || COLLECTIONS.some(c => !Array.isArray(d[c]))) throw new ApiError('Invalid tournament backup: players, matches, awards and rules must be arrays.');
-  return { players: d.players, matches: d.matches, awards: d.awards, rules: d.rules };
+  if (!d || ['players', 'matches', 'awards', 'rules'].some(c => !Array.isArray(d[c as Exclude<Collection, 'sports'>]))) throw new ApiError('Invalid tournament backup: players, matches, awards and rules must be arrays.');
+  return normalize({ players: d.players, matches: d.matches, awards: d.awards, rules: d.rules, sports: Array.isArray(d.sports) ? d.sports : [] });
 }
 
 export const replaceAll = (data: Tournament, expectedRevision?: number) => mutate(db => { COLLECTIONS.forEach(c => { (db as unknown as Record<string, unknown>)[c] = data[c]; }); }, { allowEmpty: true, expectedRevision });

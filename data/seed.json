@@ -1,4 +1,10 @@
 {
+ "sports": [
+  { "id": "table-tennis", "name": "Table Tennis", "icon": "🏓" },
+  { "id": "badminton", "name": "Badminton", "icon": "🏸" },
+  { "id": "chess", "name": "Chess", "icon": "♟️" },
+  { "id": "carroms", "name": "Carroms", "icon": "🎯" }
+ ],
  "players": [
   {
    "id": "p1",

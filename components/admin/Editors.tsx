@@ -2,10 +2,20 @@
 import { useState } from 'react';
 import { Dialog } from '@/components/ui';
 import { useTournament } from '@/components/TournamentProvider';
-import { resolveSlot, slotName, sports, teamName } from '@/lib/tournament';
-import type { Award, Match, Player, Rule } from '@/lib/types';
+import { resolveSlot, slotName, teamName } from '@/lib/tournament';
+import type { Award, Match, Player, Rule, Sport } from '@/lib/types';
 
 const enc = encodeURIComponent;
+const sportIcons = [
+  ['Racket & court', [['🏸', 'Badminton'], ['🏓', 'Table tennis'], ['🎾', 'Tennis'], ['🏐', 'Volleyball'], ['🏀', 'Basketball'], ['🏉', 'Rugby'], ['🏏', 'Cricket']]],
+  ['Field & goal', [['⚽', 'Football'], ['⚾', 'Baseball'], ['🥎', 'Softball'], ['🏑', 'Hockey'], ['🥍', 'Lacrosse'], ['🏈', 'American football']]],
+  ['Indoor & board', [['♟️', 'Chess'], ['🎯', 'Target / carroms'], ['🎱', 'Billiards'], ['🎳', 'Bowling'], ['🃏', 'Card game'], ['🎮', 'Esports']]],
+  ['Athletics & fitness', [['🏃', 'Running'], ['🚶', 'Walking'], ['🏋️', 'Weightlifting'], ['🤸', 'Gymnastics'], ['🤾', 'Handball'], ['⛹️', 'Ball sport'], ['🧘', 'Yoga']]],
+  ['Combat & precision', [['🥊', 'Boxing'], ['🥋', 'Martial arts'], ['🤼', 'Wrestling'], ['🤺', 'Fencing'], ['🏹', 'Archery'], ['🔫', 'Shooting']]],
+  ['Water, wheels & outdoors', [['🏊', 'Swimming'], ['🤽', 'Water polo'], ['🚣', 'Rowing'], ['🏄', 'Surfing'], ['🚴', 'Cycling'], ['🛼', 'Skating'], ['⛳', 'Golf'], ['🏇', 'Horse racing']]],
+  ['Awards & general', [['🏅', 'General sport'], ['🏆', 'Tournament'], ['🥇', 'Gold medal'], ['🎖️', 'Award']]],
+] as const;
+const hasListedSportIcon = (value: string) => sportIcons.some(([, options]) => options.some(([icon]) => icon === value));
 
 function Actions({ onDelete, saving }: { onDelete?: () => void; saving: boolean }) {
   return (
@@ -25,7 +35,7 @@ const TeamSelect = ({ value, onChange, allowTbd = true }: { value: string; onCha
 export function MatchEditor({ match, defaults, onClose }: { match?: Match; defaults?: Partial<Match>; onClose: () => void }) {
   const { db, call, saving } = useTournament();
   const [m, setM] = useState<Match>(match ? { ...match } : {
-    id: '', sport: 'Badminton', category: '', round: 'Round 1', roundOrder: 1, date: '', time: '', venue: '', p1: '', p2: '', status: 'scheduled', winner: '', score: '', ...defaults,
+    id: '', sport: db.sports[0]?.name || '', category: '', round: 'Round 1', roundOrder: 1, date: '', time: '', venue: '', p1: '', p2: '', status: 'scheduled', winner: '', score: '', ...defaults,
   });
   const set = (k: keyof Match) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setM({ ...m, [k]: k === 'roundOrder' ? Number(e.target.value) : e.target.value });
   const earlier = db.matches.filter(x => x.id !== m.id && x.sport === m.sport && x.category === m.category && (x.roundOrder || 1) < (m.roundOrder || 1));
@@ -49,7 +59,7 @@ export function MatchEditor({ match, defaults, onClose }: { match?: Match; defau
   return (
     <Dialog title={match ? 'Edit match' : 'Add match'} onClose={onClose}>
       <form className="formgrid" onSubmit={submit}>
-        <label className="field">Sport<select className="select" name="sport" value={m.sport} onChange={set('sport')}>{sports.map(s => <option key={s}>{s}</option>)}</select></label>
+        <label className="field">Sport<select className="select" name="sport" value={m.sport} onChange={set('sport')}>{db.sports.map(s => <option key={s.id} value={s.name}>{s.icon} {s.name}</option>)}</select></label>
         <label className="field">Category<input className="input" name="category" value={m.category} onChange={set('category')} required placeholder="Under 12 Girls" list="category-list" /></label>
         <datalist id="category-list">{[...new Set(db.matches.filter(x => x.sport === m.sport).map(x => x.category))].map(c => <option key={c} value={c} />)}</datalist>
         <label className="field">Round<input className="input" name="round" value={m.round} onChange={set('round')} required /></label>
@@ -101,7 +111,7 @@ export function PlayerEditor({ player, onClose }: { player?: Player; onClose: ()
 export function AwardEditor({ award, onClose }: { award?: Award; onClose: () => void }) {
   const { db, call, saving } = useTournament();
   const first = db.rules[0];
-  const [a, setA] = useState({ sport: award?.sport || 'Table Tennis', category: award?.category || '', team: (award?.team || 'BI') as Award['team'], place: award?.place || first?.place || 'Champion', points: award?.points ?? first?.points ?? 10 });
+  const [a, setA] = useState({ sport: award?.sport || db.sports[0]?.name || '', category: award?.category || '', team: (award?.team || 'BI') as Award['team'], place: award?.place || first?.place || 'Champion', points: award?.points ?? first?.points ?? 10 });
   const setPlace = (place: string) => {
     const rule = db.rules.find(r => r.place === place);
     setA({ ...a, place, points: rule ? rule.points : a.points });
@@ -117,13 +127,46 @@ export function AwardEditor({ award, onClose }: { award?: Award; onClose: () => 
   return (
     <Dialog title={award ? 'Edit team points' : 'Award team points'} onClose={onClose}>
       <form className="formgrid" onSubmit={submit}>
-        <label className="field">Sport<select className="select" name="sport" value={a.sport} onChange={e => setA({ ...a, sport: e.target.value })}>{sports.map(s => <option key={s}>{s}</option>)}</select></label>
+        <label className="field">Sport<select className="select" name="sport" value={a.sport} onChange={e => setA({ ...a, sport: e.target.value })}>{db.sports.map(s => <option key={s.id} value={s.name}>{s.icon} {s.name}</option>)}</select></label>
         <label className="field">Category<input className="input" name="category" value={a.category} onChange={e => setA({ ...a, category: e.target.value })} required placeholder="Ladies Singles" /></label>
         <label className="field">Team<TeamSelect value={a.team} onChange={team => setA({ ...a, team: team as Award['team'] })} allowTbd={false} /></label>
         <label className="field">Placement<input className="input" name="place" list="place-list" value={a.place} onChange={e => setPlace(e.target.value)} required /></label>
         <datalist id="place-list">{db.rules.map(r => <option key={r.place} value={r.place} />)}</datalist>
         <label className="field full">Points<input className="input" name="points" type="number" min={0} value={a.points} onChange={e => setA({ ...a, points: Number(e.target.value) })} required /></label>
         <Actions saving={saving} onDelete={award ? del : undefined} />
+      </form>
+    </Dialog>
+  );
+}
+
+export function SportEditor({ sport, onClose }: { sport?: Sport; onClose: () => void }) {
+  const { db, call, saving } = useTournament();
+  const initialIcon = sport?.icon || '🏅';
+  const [value, setValue] = useState({ name: sport?.name || '', icon: initialIcon });
+  const [customIcon, setCustomIcon] = useState(!hasListedSportIcon(initialIcon));
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (await call(sport ? 'PUT' : 'POST', sport ? `/api/sports/${enc(sport.id)}` : '/api/sports', value)) onClose();
+  };
+  const del = async () => {
+    if (!sport) return;
+    const uses = db.matches.filter(m => m.sport === sport.name).length + db.awards.filter(a => a.sport === sport.name).length;
+    if (!confirm(uses ? `${sport.name} is used by ${uses} record(s) and cannot be deleted until those records are removed. Continue?` : `Delete ${sport.name}?`)) return;
+    if (await call('DELETE', `/api/sports/${enc(sport.id)}`)) onClose();
+  };
+  return (
+    <Dialog title={sport ? 'Edit sport' : 'Add sport'} onClose={onClose}>
+      <form className="formgrid" onSubmit={submit}>
+        <label className="field">Sport icon<select className="select sport-icon-select" name="iconChoice" value={customIcon ? 'custom' : value.icon} onChange={e => {
+          if (e.target.value === 'custom') { setCustomIcon(true); setValue({ ...value, icon: '' }); }
+          else { setCustomIcon(false); setValue({ ...value, icon: e.target.value }); }
+        }} required>
+          {sportIcons.map(([group, options]) => <optgroup key={group} label={group}>{options.map(([icon, label]) => <option key={icon + label} value={icon}>{icon}  {label}</option>)}</optgroup>)}
+          <option value="custom">＋ Other / custom icon</option>
+        </select></label>
+        {customIcon && <label className="field">Custom icon<input className="input" name="icon" value={value.icon} onChange={e => setValue({ ...value, icon: e.target.value })} required maxLength={12} placeholder="Enter an emoji or symbol" autoFocus /></label>}
+        <label className="field">Sport name<input className="input" name="name" value={value.name} onChange={e => setValue({ ...value, name: e.target.value })} required maxLength={50} placeholder="e.g. Volleyball" /></label>
+        <Actions saving={saving} onDelete={sport ? del : undefined} />
       </form>
     </Dialog>
   );

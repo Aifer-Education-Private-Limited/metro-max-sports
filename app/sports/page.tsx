@@ -1,25 +1,27 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Header, SlotLink } from '@/components/ui';
 import { useTournament } from '@/components/TournamentProvider';
-import { fmt, si, slotName, sports } from '@/lib/tournament';
+import { fmt, si, slotName } from '@/lib/tournament';
 
 export default function Sports() {
   const { db } = useTournament();
-  const [sport, setSport] = useState('Table Tennis');
+  const sports = db.sports.map(s => s.name);
+  const [sport, setSport] = useState(sports[0] || '');
+  useEffect(() => { if (!sports.includes(sport)) setSport(sports[0] || ''); }, [sport, sports]);
   const cats = [...new Set(db.matches.filter(m => m.sport === sport).map(m => m.category))];
   return (
     <>
       <Header title="Sports 🏸" sub="Pick a sport to see every round, step by step." />
       <div className="toolbar">
-        {sports.map(s => <button key={s} className={'btn ' + (sport === s ? '' : 'secondary')} onClick={() => setSport(s)}>{si(s)}{s}</button>)}
+        {sports.map(s => <button key={s} className={'btn ' + (sport === s ? '' : 'secondary')} onClick={() => setSport(s)}>{si(s, db)}{s}</button>)}
       </div>
       {cats.length ? cats.map(cat => {
         const ms = db.matches.filter(m => m.sport === sport && m.category === cat).sort((a, b) => a.roundOrder - b.roundOrder);
         const rounds = [...new Set(ms.map(m => m.round))];
         return (
           <div className="card" style={{ marginBottom: 18 }} key={cat}>
-            <div className="sectionhead"><h3>{si(sport)}{sport} · {cat}</h3><span className="tag">{ms.length} matches</span></div>
+            <div className="sectionhead"><h3>{si(sport, db)}{sport} · {cat}</h3><span className="tag">{ms.length} matches</span></div>
             <div className="bracket">
               {rounds.map(round => (
                 <div className="round" key={round}>

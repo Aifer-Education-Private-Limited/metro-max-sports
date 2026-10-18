@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
-import { resolveSlot, si, slotName, sports, statusLabel, type MatchFilter } from '@/lib/tournament';
+import { resolveSlot, si, slotName, statusLabel, type MatchFilter } from '@/lib/tournament';
 import type { Match, Tournament } from '@/lib/types';
 import { useTournament } from './TournamentProvider';
 
@@ -26,7 +26,7 @@ export function FixtureCard({ m }: { m: Match }) {
     <div className="fixture">
       <div className="datebox"><b>{(m.date || '--').slice(8) || '--'}</b>{m.date ? new Date(m.date + 'T12:00:00').toLocaleDateString('en', { month: 'short' }) : 'TBD'}</div>
       <div>
-        <div className="meta">{si(m.sport)}{m.sport} · {m.category} · {m.round}</div>
+        <div className="meta">{si(m.sport, db)}{m.sport} · {m.category} · {m.round}</div>
         <div className="matchtitle"><SlotLink id={m.p1} /> <span className="muted">vs</span> <SlotLink id={m.p2} /></div>
         <div className="meta">{m.time || 'Time TBD'} {m.venue ? ' · ' + m.venue : ''} {m.status === 'completed' ? ' · Winner: ' + slotName(db, m.winner) : ''}</div>
       </div>
@@ -41,7 +41,7 @@ export function MatchFilters({ db, f, set }: { db: Tournament; f: MatchFilter; s
     <div className="toolbar">
       <input className="input" placeholder="🔍 Search a player, sport or date" value={f.query} onChange={e => set({ ...f, query: e.target.value })} aria-label="Search matches" />
       <select className="select" value={f.sport} onChange={e => set({ ...f, sport: e.target.value, category: 'All categories' })} aria-label="Sport">
-        {['All sports', ...sports].map(x => <option key={x}>{x}</option>)}
+        {['All sports', ...db.sports.map(s => s.name)].map(x => <option key={x}>{x}</option>)}
       </select>
       <select className="select" value={f.category} onChange={e => set({ ...f, category: e.target.value })} aria-label="Category">
         {['All categories', ...cats].map(x => <option key={x}>{x}</option>)}
