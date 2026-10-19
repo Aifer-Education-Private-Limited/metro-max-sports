@@ -11852,10 +11852,14 @@
  "awards": [],
  "rules": [
   {
+   "id": "all::Champion",
+   "sport": "",
    "place": "Champion",
    "points": 10
   },
   {
+   "id": "all::Runner-up",
+   "sport": "",
    "place": "Runner-up",
    "points": 5
   }

@@ -17,6 +17,6 @@ export const FIELDS: Record<Collection, { sheet: string; key: string; fields: st
     numeric: ['roundOrder', 'sourceSheet'],
   },
   awards: { sheet: 'Awards', key: 'id', fields: ['id', 'sport', 'category', 'team', 'place', 'points'], numeric: ['points'] },
-  rules: { sheet: 'Rules', key: 'place', fields: ['place', 'points'], numeric: ['points'] },
+  rules: { sheet: 'Rules', key: 'id', fields: ['id', 'sport', 'place', 'points'], numeric: ['points'] },
   sports: { sheet: 'Sports', key: 'id', fields: ['id', 'name', 'icon'], numeric: [] },
 };

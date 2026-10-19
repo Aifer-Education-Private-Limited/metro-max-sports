@@ -1,9 +1,10 @@
 'use client';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { FixtureCard, Header, SlotLink } from '@/components/ui';
 import { useTournament } from '@/components/TournamentProvider';
-import { fmt, playsIn, teamName } from '@/lib/tournament';
+import { fmt, playsIn, teamLogo, teamName } from '@/lib/tournament';
 
 export default function Profile() {
   const { db, ready } = useTournament();
@@ -20,9 +21,11 @@ export default function Profile() {
       <Header title="Player Profile" sub="All the games and wins for this player." action={back} />
       <div className="profile">
         <div className="card profilecard">
-          <div className="avatar">{p.name.split(' ').map(x => x[0]).slice(0, 2).join('')}</div>
+          <div className="avatar teamavatar" aria-label={`${teamName(p.team)} icon`}>
+            {teamLogo[p.team] ? <Image src={teamLogo[p.team]} alt="" width={58} height={58} /> : p.name.split(' ').map(x => x[0]).slice(0, 2).join('')}
+          </div>
           <h2>{p.name}</h2>
-          <span className="chip">{p.team === 'BI' ? '🔵' : '🦁'} {teamName(p.team)}</span>
+          <span className="chip">{p.team === 'BI' ? '🧙' : p.team === 'GL' ? '🦅' : '👤'} {teamName(p.team)}</span>
           {p.flat && <span className="chip">🏠 {p.flat}</span>}
           <span className="chip">{ms.length} matches</span>
           <span className="chip">🏆 {wins.length} wins</span>

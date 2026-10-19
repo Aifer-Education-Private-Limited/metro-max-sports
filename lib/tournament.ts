@@ -63,8 +63,8 @@ export function clearDownstream(db: Tournament, mid: string) {
   }
 }
 
-export interface MatchFilter { sport: string; category: string; status: string; query: string }
-export const defaultFilter: MatchFilter = { sport: 'All sports', category: 'All categories', status: 'All statuses', query: '' };
+export interface MatchFilter { sport: string; category: string; status: string; date: string; query: string }
+export const defaultFilter: MatchFilter = { sport: 'All sports', category: 'All categories', status: 'scheduled', date: '', query: '' };
 
 export function filterMatches(db: Tournament, f: MatchFilter) {
   const q = f.query.toLowerCase();
@@ -73,6 +73,7 @@ export function filterMatches(db: Tournament, f: MatchFilter) {
       (f.sport === 'All sports' || m.sport === f.sport) &&
       (f.category === 'All categories' || m.category === f.category) &&
       (f.status === 'All statuses' || m.status === f.status) &&
+      (!f.date || (f.date === 'TBD' ? !m.date : m.date === f.date)) &&
       (!q || [m.sport, m.category, m.round, slotName(db, m.p1), slotName(db, m.p2), m.date].join(' ').toLowerCase().includes(q)))
     .sort((a, b) => a.date.localeCompare(b.date));
 }

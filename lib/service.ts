@@ -16,6 +16,11 @@ const normalize = (data: Tournament): Tournament => {
     data.sports = structuredClone(defaultSports);
     for (const name of used) if (name && !data.sports.some(s => s.name === name)) data.sports.push({ id: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'), name, icon: '🏅' });
   }
+  data.rules = (data.rules || []).map(r => {
+    const sport = str(r.sport, 50);
+    const place = str(r.place, 100);
+    return { ...r, sport, place, points: Number(r.points || 0), id: str(r.id, 200) || `${sport || 'all'}::${place}` };
+  });
   return data;
 };
 export const seedData = () => normalize(structuredClone(seed) as Tournament);
@@ -98,10 +103,11 @@ export const sports: CollectionSpec<Sport> = {
     if (before.name === after.name) return;
     db.matches.forEach(m => { if (m.sport === before.name) m.sport = after.name; });
     db.awards.forEach(a => { if (a.sport === before.name) a.sport = after.name; });
+    db.rules.forEach(r => { if (r.sport === before.name) { r.sport = after.name; r.id = `${after.name}::${r.place}`; } });
   },
   beforeDelete(db, sport) {
-    const uses = db.matches.filter(m => m.sport === sport.name).length + db.awards.filter(a => a.sport === sport.name).length;
-    if (uses) throw new ApiError(`This sport is used by ${uses} match or points record(s). Remove those records before deleting it.`, 409);
+    const uses = db.matches.filter(m => m.sport === sport.name).length + db.awards.filter(a => a.sport === sport.name).length + db.rules.filter(r => r.sport === sport.name).length;
+    if (uses) throw new ApiError(`This sport is used by ${uses} match, points or rule record(s). Remove those records before deleting it.`, 409);
   },
 };
 
@@ -168,11 +174,13 @@ export const awards: CollectionSpec<Award> = {
 };
 
 export const rules: CollectionSpec<Rule> = {
-  collection: 'rules', key: 'place',
+  collection: 'rules', key: 'id',
   build(b, db, ex) {
+    const sport = str(b.sport, 50);
+    if (sport && !db.sports.some(s => s.name === sport)) throw new ApiError('Choose a sport configured in Admin.');
     const place = required(str(b.place, 100), 'Placement');
-    if (db.rules.some(r => r.place === place && r !== ex)) throw new ApiError('A rule for this placement already exists.', 409);
-    return { ...ex, place, points: num(b.points, 'Points') };
+    if (db.rules.some(r => r.sport === sport && r.place.toLowerCase() === place.toLowerCase() && r !== ex)) throw new ApiError('A rule for this sport and placement already exists.', 409);
+    return { ...ex, id: `${sport || 'all'}::${place}`, sport, place, points: num(b.points, 'Points') };
   },
 };
 

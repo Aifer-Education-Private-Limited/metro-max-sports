@@ -69,11 +69,13 @@ s, r = req('PUT', '/api/awards/' + aid, {'sport': 'Chess', 'category': 'U12', 't
 ok(s == 200 and r['data']['awards'][-1]['points'] == 5, 'update award')
 ok(req('DELETE', '/api/awards/' + aid)[0] == 200, 'delete award')
 
-ok(req('POST', '/api/rules', {'place': 'Semi-finalist', 'points': 2})[0] == 200, 'create rule')
-ok(req('POST', '/api/rules', {'place': 'Semi-finalist', 'points': 3})[0] == 409, 'duplicate rule rejected')
-s, r = req('PUT', '/api/rules/Semi-finalist', {'place': 'Semi final', 'points': 3})
+ok(req('POST', '/api/rules', {'sport': '', 'place': 'Semi-finalist', 'points': 2})[0] == 200, 'create rule')
+ok(req('POST', '/api/rules', {'sport': '', 'place': 'Semi-finalist', 'points': 3})[0] == 409, 'duplicate rule rejected')
+ok(req('POST', '/api/rules', {'sport': 'Chess', 'place': 'Semi-finalist', 'points': 4})[0] == 200, 'sport-specific rule allowed')
+s, r = req('PUT', '/api/rules/' + urllib.request.quote('all::Semi-finalist', safe=''), {'sport': '', 'place': 'Semi final', 'points': 3})
 ok(s == 200 and any(x['place'] == 'Semi final' and x['points'] == 3 for x in r['data']['rules']), 'rename/update rule')
-ok(req('DELETE', '/api/rules/' + urllib.request.quote('Semi final'))[0] == 200, 'delete rule')
+ok(req('DELETE', '/api/rules/' + urllib.request.quote('all::Semi final', safe=''))[0] == 200, 'delete rule')
+ok(req('DELETE', '/api/rules/' + urllib.request.quote('Chess::Semi-finalist', safe=''))[0] == 200, 'delete sport-specific rule')
 
 backup = state()
 ok(req('POST', '/api/admin/restore', {'players': 1})[0] == 400, 'invalid restore rejected')

@@ -57,7 +57,7 @@ Anyone can read. Every write needs the admin cookie set by `POST /api/auth`.
 | `POST /api/players`, `PUT/DELETE /api/players/:id` | participants |
 | `POST /api/matches`, `PUT/DELETE /api/matches/:id` | fixtures & results |
 | `POST /api/awards`, `PUT/DELETE /api/awards/:id` | team-point awards |
-| `POST /api/rules`, `PUT/DELETE /api/rules/:place` | points rules |
+| `POST /api/rules`, `PUT/DELETE /api/rules/:id` | points rules |
 | `POST /api/admin/seed` | load built-in schedule into an empty store |
 | `POST /api/admin/restore` | replace everything with a JSON backup |
 

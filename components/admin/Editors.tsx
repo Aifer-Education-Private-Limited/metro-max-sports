@@ -110,12 +110,13 @@ export function PlayerEditor({ player, onClose }: { player?: Player; onClose: ()
 
 export function AwardEditor({ award, onClose }: { award?: Award; onClose: () => void }) {
   const { db, call, saving } = useTournament();
-  const first = db.rules[0];
-  const [a, setA] = useState({ sport: award?.sport || db.sports[0]?.name || '', category: award?.category || '', team: (award?.team || 'BI') as Award['team'], place: award?.place || first?.place || 'Champion', points: award?.points ?? first?.points ?? 10 });
-  const setPlace = (place: string) => {
-    const rule = db.rules.find(r => r.place === place);
-    setA({ ...a, place, points: rule ? rule.points : a.points });
-  };
+  const rulesFor = (sport: string) => db.rules.filter(r => !r.sport || r.sport === sport);
+  const ruleFor = (sport: string, place: string) => db.rules.find(r => r.sport === sport && r.place === place) || db.rules.find(r => !r.sport && r.place === place);
+  const initialSport = award?.sport || db.sports[0]?.name || '';
+  const initialPlace = award?.place || rulesFor(initialSport)[0]?.place || 'Champion';
+  const [a, setA] = useState({ sport: initialSport, category: award?.category || '', team: (award?.team || 'BI') as Award['team'], place: initialPlace, points: award?.points ?? ruleFor(initialSport, initialPlace)?.points ?? 10 });
+  const setSport = (sport: string) => setA({ ...a, sport, points: ruleFor(sport, a.place)?.points ?? a.points });
+  const setPlace = (place: string) => setA({ ...a, place, points: ruleFor(a.sport, place)?.points ?? a.points });
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (await call(award ? 'PUT' : 'POST', award ? `/api/awards/${enc(award.id)}` : '/api/awards', a)) onClose();
@@ -127,11 +128,11 @@ export function AwardEditor({ award, onClose }: { award?: Award; onClose: () => 
   return (
     <Dialog title={award ? 'Edit team points' : 'Award team points'} onClose={onClose}>
       <form className="formgrid" onSubmit={submit}>
-        <label className="field">Sport<select className="select" name="sport" value={a.sport} onChange={e => setA({ ...a, sport: e.target.value })}>{db.sports.map(s => <option key={s.id} value={s.name}>{s.icon} {s.name}</option>)}</select></label>
+        <label className="field">Sport<select className="select" name="sport" value={a.sport} onChange={e => setSport(e.target.value)}>{db.sports.map(s => <option key={s.id} value={s.name}>{s.icon} {s.name}</option>)}</select></label>
         <label className="field">Category<input className="input" name="category" value={a.category} onChange={e => setA({ ...a, category: e.target.value })} required placeholder="Ladies Singles" /></label>
         <label className="field">Team<TeamSelect value={a.team} onChange={team => setA({ ...a, team: team as Award['team'] })} allowTbd={false} /></label>
         <label className="field">Placement<input className="input" name="place" list="place-list" value={a.place} onChange={e => setPlace(e.target.value)} required /></label>
-        <datalist id="place-list">{db.rules.map(r => <option key={r.place} value={r.place} />)}</datalist>
+        <datalist id="place-list">{rulesFor(a.sport).map(r => <option key={r.id} value={r.place} />)}</datalist>
         <label className="field full">Points<input className="input" name="points" type="number" min={0} value={a.points} onChange={e => setA({ ...a, points: Number(e.target.value) })} required /></label>
         <Actions saving={saving} onDelete={award ? del : undefined} />
       </form>
@@ -173,19 +174,23 @@ export function SportEditor({ sport, onClose }: { sport?: Sport; onClose: () => 
 }
 
 export function RuleEditor({ rule, onClose }: { rule?: Rule; onClose: () => void }) {
-  const { call, saving } = useTournament();
-  const [r, setR] = useState({ place: rule?.place || '', points: rule?.points ?? 0 });
+  const { db, call, saving } = useTournament();
+  const [r, setR] = useState({ sport: rule?.sport || '', place: rule?.place || '', points: rule?.points ?? 0 });
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (await call(rule ? 'PUT' : 'POST', rule ? `/api/rules/${enc(rule.place)}` : '/api/rules', r)) onClose();
+    if (await call(rule ? 'PUT' : 'POST', rule ? `/api/rules/${enc(rule.id)}` : '/api/rules', r)) onClose();
   };
   const del = async () => {
     if (!rule || !confirm(`Delete the "${rule.place}" rule? Existing awards keep their points.`)) return;
-    if (await call('DELETE', `/api/rules/${enc(rule.place)}`)) onClose();
+    if (await call('DELETE', `/api/rules/${enc(rule.id)}`)) onClose();
   };
   return (
     <Dialog title={rule ? 'Edit points rule' : 'Add points rule'} onClose={onClose}>
       <form className="formgrid" onSubmit={submit}>
+        <label className="field full">Sport<select className="select" name="sport" value={r.sport} onChange={e => setR({ ...r, sport: e.target.value })}>
+          <option value="">All sports</option>
+          {db.sports.map(s => <option key={s.id} value={s.name}>{s.icon} {s.name}</option>)}
+        </select></label>
         <label className="field">Placement<input className="input" name="place" value={r.place} onChange={e => setR({ ...r, place: e.target.value })} required placeholder="e.g. Semi-finalist" /></label>
         <label className="field">Points<input className="input" name="points" type="number" min={0} value={r.points} onChange={e => setR({ ...r, points: Number(e.target.value) })} required /></label>
         <Actions saving={saving} onDelete={rule ? del : undefined} />

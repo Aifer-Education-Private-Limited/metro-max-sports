@@ -159,12 +159,13 @@ function AwardsTab({ edit }: { edit: (a?: Award) => void }) {
 
 function RulesTab({ edit }: { edit: (r?: Rule) => void }) {
   const { db } = useTournament();
+  const rules = [...db.rules].sort((a, b) => (a.sport || 'All sports').localeCompare(b.sport || 'All sports') || a.place.localeCompare(b.place));
   return (
     <div className="card" style={{ maxWidth: 720 }}>
       <div className="sectionhead"><h3>Points rules</h3><button className="btn" onClick={() => edit()}>+ Add rule</button></div>
-      <p className="muted" style={{ fontSize: 13 }}>Rules pre-fill the points when you award a placement.</p>
-      {db.rules.length ? db.rules.map(r => (
-        <div className="fixture" key={r.place}><span>🏅</span><b>{r.place}</b><span><b>{r.points} pts</b> <button className="textlink" onClick={() => edit(r)}>Edit</button></span></div>
+      <p className="muted" style={{ fontSize: 13 }}>Rules pre-fill points for a placement. Sport-specific rules are used first; All sports rules are the fallback.</p>
+      {rules.length ? rules.map(r => (
+        <div className="fixture" key={r.id}><span>{r.sport ? si(r.sport, db) : '🏅'}</span><b>{r.place}</b><span className="mini">{r.sport || 'All sports'} · <b>{r.points} pts</b> <button className="textlink" onClick={() => edit(r)}>Edit</button></span></div>
       )) : <div className="empty">No rules yet.</div>}
     </div>
   );

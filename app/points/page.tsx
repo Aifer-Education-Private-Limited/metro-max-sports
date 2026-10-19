@@ -2,11 +2,12 @@
 /* eslint-disable @next/next/no-img-element */
 import { Header } from '@/components/ui';
 import { useTournament } from '@/components/TournamentProvider';
-import { points, teamLogo, teamName } from '@/lib/tournament';
+import { points, si, teamLogo, teamName } from '@/lib/tournament';
 
 export default function Points() {
   const { db } = useTournament();
   const totals = (['BI', 'GL'] as const).map(t => ({ t, points: points(db, t) })).sort((a, b) => b.points - a.points);
+  const rules = [...db.rules].sort((a, b) => (a.sport || 'All sports').localeCompare(b.sport || 'All sports') || a.place.localeCompare(b.place));
   return (
     <>
       <Header title="Team Points ⭐" sub="MMX Wizardz and Metro Hawks collect points as they win." />
@@ -37,7 +38,7 @@ export default function Points() {
         <div className="card">
           <div className="sectionhead"><h3>🏅 How Points Work</h3></div>
           <p className="muted" style={{ fontSize: 13 }}>Teams earn points for how far their players go. Official rules come from the organizing committee.</p>
-          {db.rules.map(r => <div className="fixture" key={r.place}><span>🏅</span><b>{r.place}</b><b>{r.points} pts</b></div>)}
+          {rules.map(r => <div className="fixture" key={r.id}><span>{r.sport ? si(r.sport, db) : '🏅'}</span><b>{r.place}</b><span><span className="mini">{r.sport || 'All sports'}</span><b>{r.points} pts</b></span></div>)}
         </div>
       </div>
     </>

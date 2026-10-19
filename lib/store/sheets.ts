@@ -82,7 +82,7 @@ export function sheetsStore(): Store {
         headers[c] = [...header, ...def.fields.filter(f => !header.includes(f))];
         const keyIdx = header.indexOf(def.key);
         (data as unknown as Record<string, unknown[]>)[c] = rows
-          .filter(r => keyIdx >= 0 && String(r[keyIdx] ?? '').trim() !== '')
+          .filter(r => keyIdx >= 0 ? String(r[keyIdx] ?? '').trim() !== '' : r.some(v => String(v ?? '').trim() !== ''))
           .map(r => {
             const item: Record<string, unknown> = {};
             headers[c]!.forEach((h, j) => {

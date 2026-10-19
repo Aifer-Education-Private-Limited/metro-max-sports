@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
-import { resolveSlot, si, slotName, statusLabel, type MatchFilter } from '@/lib/tournament';
+import { fmt, resolveSlot, si, slotName, statusLabel, type MatchFilter } from '@/lib/tournament';
 import type { Match, Tournament } from '@/lib/types';
 import { useTournament } from './TournamentProvider';
 
@@ -37,6 +37,7 @@ export function FixtureCard({ m }: { m: Match }) {
 
 export function MatchFilters({ db, f, set }: { db: Tournament; f: MatchFilter; set: (f: MatchFilter) => void }) {
   const cats = [...new Set(db.matches.filter(m => f.sport === 'All sports' || m.sport === f.sport).map(m => m.category))];
+  const dates = [...new Set(db.matches.filter(m => m.date).map(m => m.date))].sort();
   return (
     <div className="toolbar">
       <input className="input" placeholder="🔍 Search a player, sport or date" value={f.query} onChange={e => set({ ...f, query: e.target.value })} aria-label="Search matches" />
@@ -48,6 +49,11 @@ export function MatchFilters({ db, f, set }: { db: Tournament; f: MatchFilter; s
       </select>
       <select className="select" value={f.status} onChange={e => set({ ...f, status: e.target.value })} aria-label="Status">
         {['All statuses', 'scheduled', 'completed', 'bye'].map(x => <option key={x}>{x}</option>)}
+      </select>
+      <select className="select" value={f.date} onChange={e => set({ ...f, date: e.target.value })} aria-label="Date">
+        <option value="">All dates</option>
+        {dates.map(d => <option key={d} value={d}>{fmt(d)}</option>)}
+        {db.matches.some(m => !m.date) && <option value="TBD">Date TBD</option>}
       </select>
     </div>
   );
