@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { fmt, si } from '@/lib/tournament';
+import { fmt, fmtTime, si, teamName } from '@/lib/tournament';
 import { sheetAnchor } from '@/lib/sheet-anchor';
 import s from './FixtureBrackets.module.css';
 
@@ -114,7 +114,7 @@ export default function FixtureBrackets({ sports }: { sports: string[] }) {
     return (
       <div className={`${s.side} ${won || advances ? s.won : ''} ${lost ? s.lost : ''}`}>
         <Link href={`/players/${p.id}`} className={s.name}>{p.name}</Link>
-        {code && <span className={`${s.team} ${code === 'WZ' ? s.wz : s.hk}`}>{code}</span>}
+        {code && <span className={`${s.team} ${code === 'WZ' ? s.wz : s.hk}`}>{teamName(p.team || '')}</span>}
         {won && <span className={s.tick} aria-label="Winner">✓</span>}
       </div>
     );
@@ -124,7 +124,7 @@ export default function FixtureBrackets({ sports }: { sports: string[] }) {
     <div className={`${s.match} ${m.status === 'completed' ? s.done : ''} ${m.status === 'bye' ? s.isBye : ''}`}>
       <div className={s.mhead}>
         <span>M{matchNo(m.id)}</span>
-        <span>{m.status === 'completed' ? 'Done' : m.status === 'bye' ? 'Advances' : `${fmt(m.date || '').replace(/ \d{4}$/, '')}${m.time ? ' · ' + m.time : ''}`}</span>
+        <span>{m.status === 'completed' ? 'Done' : m.status === 'bye' ? 'Advances' : `${fmt(m.date || '').replace(/ \d{4}$/, '')}${m.time ? ' · ' + fmtTime(m.time) : ''}`}</span>
       </div>
       <Side id={m.p1} match={m} />
       <Side id={m.p2} match={m} />

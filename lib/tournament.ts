@@ -13,6 +13,12 @@ export const teamLogo: Record<string, string> = { BI: '/brand/mmx-wizardz.webp',
 export const statusLabel = (s: string) => (s === 'completed' ? '✅ Done' : s === 'bye' ? 'Bye / advance' : '⏰ Coming up');
 export const fmt = (d: string) =>
   d ? new Date(d + 'T12:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Date TBD';
+export const fmtTime = (t: string) => {
+  if (!t) return 'Time TBD';
+  const [h, m] = t.split(':').map(Number);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return t;
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
+};
 export const points = (db: Tournament, t: string) => db.awards.filter(a => a.team === t).reduce((s, a) => s + Number(a.points || 0), 0);
 
 /** Resolves a slot (player id, BYE, or `winner:<matchId>`) to the participant who currently fills it. */
@@ -39,7 +45,8 @@ export function slotName(db: Tournament, id: string): string {
     const m = db.matches.find(x => x.id === r.slice(7));
     return m ? 'Winner · ' + m.round + ' · ' + (m.id.split('-').at(-1) || '').toUpperCase() : 'TBD';
   }
-  return db.players.find(p => p.id === r)?.name || 'TBD';
+  const p = db.players.find(p => p.id === r);
+  return p ? `${p.name} · ${teamName(p.team)}` : 'TBD';
 }
 
 export const playsIn = (db: Tournament, m: Match, pid: string) => resolveSlot(db, m.p1) === pid || resolveSlot(db, m.p2) === pid;

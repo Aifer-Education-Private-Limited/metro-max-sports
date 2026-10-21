@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
-import { fmt, resolveSlot, si, slotName, statusLabel, type MatchFilter } from '@/lib/tournament';
+import { fmt, fmtTime, resolveSlot, si, slotName, statusLabel, type MatchFilter } from '@/lib/tournament';
 import type { Match, Tournament } from '@/lib/types';
 import { useTournament } from './TournamentProvider';
 
@@ -28,7 +28,7 @@ export function FixtureCard({ m }: { m: Match }) {
       <div>
         <div className="meta">{si(m.sport, db)}{m.sport} · {m.category} · {m.round}</div>
         <div className="matchtitle"><SlotLink id={m.p1} /> <span className="muted">vs</span> <SlotLink id={m.p2} /></div>
-        <div className="meta">{m.time || 'Time TBD'} {m.venue ? ' · ' + m.venue : ''} {m.status === 'completed' ? ' · Winner: ' + slotName(db, m.winner) : ''}</div>
+        <div className="meta">{fmtTime(m.time)} {m.venue ? ' · ' + m.venue : ''} {m.status === 'completed' ? ' · Winner: ' + slotName(db, m.winner) : ''}</div>
       </div>
       <span className={tagClass(m.status)}>{statusLabel(m.status)}</span>
     </div>

@@ -4,11 +4,12 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { CheerButton, FixtureCard, Header, SlotLink } from '@/components/ui';
 import { useTournament } from '@/components/TournamentProvider';
-import { fmt, points, si, slotName } from '@/lib/tournament';
+import { fmt, fmtTime, points, si, slotName } from '@/lib/tournament';
 
 export default function Home() {
   const { db } = useTournament();
-  const recent = db.matches.filter(m => m.status === 'completed').sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4);
+  const recent = db.matches.filter(m => m.status === 'completed').sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time)).slice(0, 10);
+  const champions = db.matches.filter(m => m.status === 'completed' && /\bfinals?\b/i.test(m.round) && !/(semi|quarter)[-\s]?final/i.test(m.round)).sort((a, b) => b.date.localeCompare(a.date));
   const total = db.matches.filter(m => m.status !== 'bye').length, done = db.matches.filter(m => m.status === 'completed').length;
   const up = db.matches.filter(m => m.status === 'scheduled').sort((a, b) => a.date.localeCompare(b.date)).slice(0, 5);
   const bi = points(db, 'BI'), gl = points(db, 'GL');
@@ -37,12 +38,12 @@ export default function Home() {
       </div>
       <div className="card" style={{ marginTop: 18 }}>
         <div className="sectionhead"><h3>🌟 Champion cheers</h3><Link className="textlink" href="/results">All results →</Link></div>
-        {recent.length ? recent.map(m => (
+        {champions.length ? champions.map(m => (
           <div className="winner-tile" key={m.id}>
-            <div><span className="mini">{si(m.sport, db)}{m.sport} · {m.category}</span><strong><SlotLink id={m.winner} /> won!</strong><span className="mini">{m.score || m.round}</span></div>
+            <div><span className="mini">{si(m.sport, db)}{m.sport} · {m.category}</span><strong><SlotLink id={m.winner} /> is the champion!</strong><span className="mini">{m.score || m.round}</span></div>
             <CheerButton who={slotName(db, m.winner)} />
           </div>
-        )) : <p className="muted" style={{ fontSize: 13 }}>The celebration wall will light up when the first results are recorded.</p>}
+        )) : <p className="muted" style={{ fontSize: 13 }}>Champions will appear here after the final matches are completed.</p>}
       </div>
       <div className="homepoints">
         <div className="card">
@@ -71,7 +72,7 @@ export default function Home() {
           <div className="card">
             <div className="sectionhead"><h3>✅ Latest Results</h3><Link className="textlink" href="/results">All results →</Link></div>
             {recent.length ? recent.map(m => (
-              <div className="resultrow" key={m.id}><div className="mini">{si(m.sport, db)}{m.sport} · {fmt(m.date)}</div><strong><SlotLink id={m.p1} /> vs <SlotLink id={m.p2} /></strong><span className="tag green">{slotName(db, m.winner)} won</span></div>
+              <div className="resultrow" key={m.id}><div className="mini">{si(m.sport, db)}{m.sport} · {fmt(m.date)} · {fmtTime(m.time)}</div><strong><SlotLink id={m.p1} /> vs <SlotLink id={m.p2} /></strong><span className="tag green">{slotName(db, m.winner)} won</span></div>
             )) : <div className="empty">No results yet. Check back soon! 🌟</div>}
           </div>
         </div>

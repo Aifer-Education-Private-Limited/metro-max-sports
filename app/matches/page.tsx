@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Header, MatchFilters, SlotLink, tagClass } from '@/components/ui';
 import { useTournament } from '@/components/TournamentProvider';
-import { defaultFilter, filterMatches, fmt, si, statusLabel } from '@/lib/tournament';
+import { defaultFilter, filterMatches, fmt, fmtTime, si, statusLabel } from '@/lib/tournament';
 
 export default function Matches() {
   const { db } = useTournament();
@@ -20,7 +20,7 @@ export default function Matches() {
           <tbody>
             {ms.length ? ms.map(m => (
               <tr key={m.id}>
-                <td data-label="When"><b>{fmt(m.date)}</b><div className="mini">{m.time || 'Time TBD'}</div></td>
+                <td data-label="When"><b>{fmt(m.date)}</b><div className="mini">{fmtTime(m.time)}</div></td>
                 <td data-label="Sport"><b>{si(m.sport, db)}{m.sport}</b><div className="mini">{m.category}</div></td>
                 <td data-label="Match"><SlotLink id={m.p1} /> <span className="muted">vs</span> <SlotLink id={m.p2} /></td>
                 <td data-label="Round">{m.round}</td>

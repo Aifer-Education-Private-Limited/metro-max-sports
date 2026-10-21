@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { FixtureCard, Header, SlotLink } from '@/components/ui';
 import { useTournament } from '@/components/TournamentProvider';
-import { fmt, playsIn, teamLogo, teamName } from '@/lib/tournament';
+import { fmt, fmtTime, playsIn, teamLogo, teamName } from '@/lib/tournament';
 
 export default function Profile() {
   const { db, ready } = useTournament();
@@ -39,7 +39,7 @@ export default function Profile() {
             <div className="sectionhead"><h3>🏆 Match Results</h3></div>
             {completed.length ? completed.map(m => (
               <div className="resultrow" key={m.id}>
-                <div className="mini">{m.sport} · {m.category} · {fmt(m.date)}</div>
+                <div className="mini">{m.sport} · {m.category} · {fmt(m.date)} · {fmtTime(m.time)}</div>
                 <strong><SlotLink id={m.p1} /> vs <SlotLink id={m.p2} /></strong>
                 <span className={'tag ' + (m.winner === p.id ? 'green' : 'gold')}>{m.winner === p.id ? '🏆 Won' : 'Good game! 👏'}</span> {m.score}
               </div>

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { AwardEditor, MatchEditor, PlayerEditor, RuleEditor, SportEditor } from '@/components/admin/Editors';
 import { Header, MatchFilters, SlotLink, tagClass } from '@/components/ui';
 import { useTournament } from '@/components/TournamentProvider';
-import { defaultFilter, filterMatches, fmt, playsIn, si, statusLabel, teamName } from '@/lib/tournament';
+import { defaultFilter, filterMatches, fmt, fmtTime, playsIn, si, statusLabel, teamName } from '@/lib/tournament';
 import type { Award, Match, Player, Rule, Sport, Tournament } from '@/lib/types';
 
 type Tab = 'matches' | 'players' | 'sports' | 'awards' | 'rules' | 'backup';
@@ -90,7 +90,7 @@ function MatchesTab({ edit }: { edit: (m?: Match) => void }) {
             {ms.length ? ms.map(m => (
               <tr key={m.id}>
                 <td data-label="Match"><div className="mini">{si(m.sport, db)}{m.sport} · {m.category}</div><SlotLink id={m.p1} /> <span className="muted">vs</span> <SlotLink id={m.p2} /></td>
-                <td data-label="When">{fmt(m.date)}<div className="mini">{m.time || 'Time TBD'}</div></td>
+                <td data-label="When">{fmt(m.date)}<div className="mini">{fmtTime(m.time)}</div></td>
                 <td data-label="Round">{m.round}</td>
                 <td data-label="Status"><span className={tagClass(m.status)}>{statusLabel(m.status)}</span></td>
                 <td data-label="Winner">{m.winner ? <SlotLink id={m.winner} /> : '—'}{m.score && <div className="mini">{m.score}</div>}</td>

@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Header, SlotLink } from '@/components/ui';
 import { useTournament } from '@/components/TournamentProvider';
-import { fmt, si, slotName } from '@/lib/tournament';
+import { fmt, fmtTime, si, slotName } from '@/lib/tournament';
 
 export default function Sports() {
   const { db } = useTournament();
@@ -29,7 +29,7 @@ export default function Sports() {
                   {ms.filter(m => m.round === round).map(m => (
                     <div className="bracketmatch" key={m.id}>
                       <div><SlotLink id={m.p1} /></div><div><SlotLink id={m.p2} /></div>
-                      <p className="mini">{fmt(m.date)} · {m.status === 'completed' ? 'Winner: ' + slotName(db, m.winner) : m.status === 'bye' ? 'Bye' : 'Pending'}</p>
+                      <p className="mini">{fmt(m.date)} · {fmtTime(m.time)} · {m.status === 'completed' ? 'Winner: ' + slotName(db, m.winner) : m.status === 'bye' ? 'Bye' : 'Pending'}</p>
                     </div>
                   ))}
                 </div>

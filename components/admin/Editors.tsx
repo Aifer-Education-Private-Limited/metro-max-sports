@@ -38,6 +38,8 @@ export function MatchEditor({ match, defaults, onClose }: { match?: Match; defau
     id: '', sport: db.sports[0]?.name || '', category: '', round: 'Round 1', roundOrder: 1, date: '', time: '', venue: '', p1: '', p2: '', status: 'scheduled', winner: '', score: '', ...defaults,
   });
   const set = (k: keyof Match) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setM({ ...m, [k]: k === 'roundOrder' ? Number(e.target.value) : e.target.value });
+  const rounds = ['Round 1', 'Round 2', 'Round 3', 'Round 4', 'Round 5', 'Round of 16', 'Quarter-final', 'Semi-final', 'Final', 'Third-place', 'League', 'Playoff'];
+  const setRound = (round: string) => setM({ ...m, round, roundOrder: rounds.indexOf(round) + 1 || m.roundOrder || 1 });
   const earlier = db.matches.filter(x => x.id !== m.id && x.sport === m.sport && x.category === m.category && (x.roundOrder || 1) < (m.roundOrder || 1));
   const players = db.players.slice().sort((a, b) => a.name.localeCompare(b.name));
   const slot = (k: 'p1' | 'p2') => (
@@ -62,7 +64,9 @@ export function MatchEditor({ match, defaults, onClose }: { match?: Match; defau
         <label className="field">Sport<select className="select" name="sport" value={m.sport} onChange={set('sport')}>{db.sports.map(s => <option key={s.id} value={s.name}>{s.icon} {s.name}</option>)}</select></label>
         <label className="field">Category<input className="input" name="category" value={m.category} onChange={set('category')} required placeholder="Under 12 Girls" list="category-list" /></label>
         <datalist id="category-list">{[...new Set(db.matches.filter(x => x.sport === m.sport).map(x => x.category))].map(c => <option key={c} value={c} />)}</datalist>
-        <label className="field">Round<input className="input" name="round" value={m.round} onChange={set('round')} required /></label>
+        <label className="field">Round<select className="select" name="round" value={m.round} onChange={e => setRound(e.target.value)} required>
+          <option value="">Choose round</option>{rounds.map(r => <option key={r} value={r}>{r}</option>)}
+        </select></label>
         <label className="field">Round order<input className="input" type="number" name="roundOrder" min={1} max={20} value={m.roundOrder || 1} onChange={set('roundOrder')} required /></label>
         <label className="field">Date<input className="input" type="date" name="date" value={m.date} onChange={set('date')} /></label>
         <label className="field">Time<input className="input" type="time" name="time" value={m.time} onChange={set('time')} /></label>
