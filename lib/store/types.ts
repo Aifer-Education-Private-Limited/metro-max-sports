@@ -13,7 +13,7 @@ export const FIELDS: Record<Collection, { sheet: string; key: string; fields: st
   players: { sheet: 'Players', key: 'id', fields: ['id', 'name', 'flat', 'team'], numeric: [] },
   matches: {
     sheet: 'Matches', key: 'id',
-    fields: ['id', 'sport', 'category', 'round', 'roundOrder', 'date', 'time', 'venue', 'p1', 'p2', 'status', 'winner', 'score', 'sourceSheet'],
+    fields: ['id', 'sport', 'category', 'round', 'roundOrder', 'date', 'time', 'venue', 'p1', 'p2', 'status', 'winner', 'score', 'completedAt', 'sourceSheet'],
     numeric: ['roundOrder', 'sourceSheet'],
   },
   awards: { sheet: 'Awards', key: 'id', fields: ['id', 'sport', 'category', 'team', 'place', 'points'], numeric: ['points'] },

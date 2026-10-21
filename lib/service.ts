@@ -16,6 +16,10 @@ const normalize = (data: Tournament): Tournament => {
     data.sports = structuredClone(defaultSports);
     for (const name of used) if (name && !data.sports.some(s => s.name === name)) data.sports.push({ id: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'), name, icon: '🏅' });
   }
+  data.matches = (data.matches || []).map(m => ({
+    ...m,
+    completedAt: m.status === 'completed' ? str(m.completedAt, 40) || (m.date ? `${m.date}T${m.time || '00:00'}:00` : '') : '',
+  }));
   data.rules = (data.rules || []).map(r => {
     const sport = str(r.sport, 50);
     const place = str(r.place, 100);
@@ -151,6 +155,7 @@ export const matches: CollectionSpec<Match> = {
       ...ex, id: ex?.id || '', sport, category: required(str(b.category), 'Category'),
       round: required(str(b.round, 100), 'Round'), roundOrder: num(b.roundOrder ?? 1, 'Round order', 1, 20), date, time,
       venue: str(b.venue, 200), p1, p2, status, winner, score: str(b.score, 500), sourceSheet: ex?.sourceSheet ?? '',
+      completedAt: status === 'completed' ? str(ex?.completedAt, 40) || new Date().toISOString() : '',
     };
   },
   afterUpdate(db, before, after) {

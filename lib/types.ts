@@ -5,7 +5,7 @@ export interface Player { id: string; name: string; flat: string; team: Team; [e
 export interface Match {
   id: string; sport: string; category: string; round: string; roundOrder: number;
   date: string; time: string; venue: string; p1: string; p2: string;
-  status: MatchStatus; winner: string; score: string; sourceSheet?: number | '';
+  status: MatchStatus; winner: string; score: string; sourceSheet?: number | ''; completedAt?: string;
   [extra: string]: unknown;
 }
 export interface Award { id: string; sport: string; category: string; team: Team; place: string; points: number; [extra: string]: unknown }

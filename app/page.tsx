@@ -8,7 +8,7 @@ import { fmt, fmtTime, points, si, slotName } from '@/lib/tournament';
 
 export default function Home() {
   const { db } = useTournament();
-  const recent = db.matches.filter(m => m.status === 'completed').sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time)).slice(0, 10);
+  const recent = db.matches.filter(m => m.status === 'completed').sort((a, b) => String(b.completedAt || '').localeCompare(String(a.completedAt || ''))).slice(0, 10);
   const champions = db.matches.filter(m => m.status === 'completed' && /\bfinals?\b/i.test(m.round) && !/(semi|quarter)[-\s]?final/i.test(m.round)).sort((a, b) => b.date.localeCompare(a.date));
   const total = db.matches.filter(m => m.status !== 'bye').length, done = db.matches.filter(m => m.status === 'completed').length;
   const up = db.matches.filter(m => m.status === 'scheduled').sort((a, b) => a.date.localeCompare(b.date)).slice(0, 5);
