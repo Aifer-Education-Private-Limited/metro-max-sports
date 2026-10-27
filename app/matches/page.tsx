@@ -22,10 +22,10 @@ export default function Matches() {
               <tr key={m.id}>
                 <td data-label="When"><b>{fmt(m.date)}</b><div className="mini">{fmtTime(m.time)}</div></td>
                 <td data-label="Sport"><b>{si(m.sport, db)}{m.sport}</b><div className="mini">{m.category}</div></td>
-                <td data-label="Match"><SlotLink id={m.p1} /> <span className="muted">vs</span> <SlotLink id={m.p2} /></td>
+                <td data-label="Match">{m.kind === 'event' ? <span className="muted">Placings event</span> : <><SlotLink id={m.p1} /> <span className="muted">vs</span> <SlotLink id={m.p2} /></>}</td>
                 <td data-label="Round">{m.round}</td>
                 <td data-label="Status"><span className={tagClass(m.status)}>{statusLabel(m.status)}</span></td>
-                <td data-label="Winner">{m.winner ? <SlotLink id={m.winner} /> : '—'}</td>
+                <td data-label="Winner">{m.winner ? <SlotLink id={m.winner} /> : '—'}{m.second ? <div className="mini">🥈 <SlotLink id={m.second} /></div> : null}{m.third ? <div className="mini">🥉 <SlotLink id={m.third} /></div> : null}</td>
               </tr>
             )) : <tr><td colSpan={6} className="empty">No matches found. Try a different search!</td></tr>}
           </tbody>

@@ -40,8 +40,10 @@ export default function Profile() {
             {completed.length ? completed.map(m => (
               <div className="resultrow" key={m.id}>
                 <div className="mini">{m.sport} · {m.category} · {fmt(m.date)} · {fmtTime(m.time)}</div>
-                <strong><SlotLink id={m.p1} /> vs <SlotLink id={m.p2} /></strong>
-                <span className={'tag ' + (m.winner === p.id ? 'green' : 'gold')}>{m.winner === p.id ? '🏆 Won' : 'Good game! 👏'}</span> {m.score}
+                <strong>{m.kind === 'event' ? 'Placings' : <><SlotLink id={m.p1} /> vs <SlotLink id={m.p2} /></>}</strong>
+                <span className={'tag ' + (m.winner === p.id ? 'green' : 'gold')}>
+                  {m.kind === 'event' ? (m.winner === p.id ? '🥇 1st' : m.second === p.id ? '🥈 2nd' : '🥉 3rd') : m.winner === p.id ? '🏆 Won' : 'Good game! 👏'}
+                </span> {m.score}
               </div>
             )) : <div className="empty">No finished matches yet</div>}
           </div>

@@ -72,7 +72,7 @@ export default function Home() {
           <div className="card">
             <div className="sectionhead"><h3>✅ Latest Results</h3><Link className="textlink" href="/results">All results →</Link></div>
             {recent.length ? recent.map(m => (
-              <div className="resultrow" key={m.id}><div className="mini">{si(m.sport, db)}{m.sport} · {fmt(m.date)} · {fmtTime(m.time)}</div><strong><SlotLink id={m.p1} /> vs <SlotLink id={m.p2} /></strong><span className="tag green">{slotName(db, m.winner)} won</span></div>
+              <div className="resultrow" key={m.id}><div className="mini">{si(m.sport, db)}{m.sport} · {m.category} · {fmt(m.date)} · {fmtTime(m.time)}</div><strong>{m.kind === 'event' ? 'Placings' : <><SlotLink id={m.p1} /> vs <SlotLink id={m.p2} /></>}</strong><span className="tag green">{m.kind === 'event' ? '🥇 ' : ''}{slotName(db, m.winner)}{m.kind === 'event' ? '' : ' won'}</span>{m.second ? <span className="tag">🥈 {slotName(db, m.second)}</span> : null}{m.third ? <span className="tag">🥉 {slotName(db, m.third)}</span> : null}</div>
             )) : <div className="empty">No results yet. Check back soon! 🌟</div>}
           </div>
         </div>

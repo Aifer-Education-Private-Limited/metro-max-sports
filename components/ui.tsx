@@ -27,8 +27,8 @@ export function FixtureCard({ m }: { m: Match }) {
       <div className="datebox"><b>{(m.date || '--').slice(8) || '--'}</b>{m.date ? new Date(m.date + 'T12:00:00').toLocaleDateString('en', { month: 'short' }) : 'TBD'}</div>
       <div>
         <div className="meta">{si(m.sport, db)}{m.sport} · {m.category} · {m.round}</div>
-        <div className="matchtitle"><SlotLink id={m.p1} /> <span className="muted">vs</span> <SlotLink id={m.p2} /></div>
-        <div className="meta">{fmtTime(m.time)} {m.venue ? ' · ' + m.venue : ''} {m.status === 'completed' ? ' · Winner: ' + slotName(db, m.winner) : ''}</div>
+        <div className="matchtitle">{m.kind === 'event' ? <span>Placings event</span> : <><SlotLink id={m.p1} /> <span className="muted">vs</span> <SlotLink id={m.p2} /></>}</div>
+        <div className="meta">{fmtTime(m.time)} {m.venue ? ' · ' + m.venue : ''} {m.status === 'completed' ? ' · ' + (m.kind === 'event' ? '🥇' : 'Winner:') + ' ' + slotName(db, m.winner) + (m.second ? ' · 🥈 ' + slotName(db, m.second) : '') + (m.third ? ' · 🥉 ' + slotName(db, m.third) : '') : ''}</div>
       </div>
       <span className={tagClass(m.status)}>{statusLabel(m.status)}</span>
     </div>

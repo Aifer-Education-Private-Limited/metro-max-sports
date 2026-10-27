@@ -11,6 +11,7 @@ type Match = {
   id: string; sport: string; category: string; round: string; roundOrder?: number;
   date?: string; time?: string; venue?: string; p1: string; p2: string;
   status: string; winner?: string; score?: string; sourceSheet?: number;
+  kind?: 'match' | 'event'; second?: string; third?: string;
 };
 type Data = { players: Player[]; matches: Match[]; sports?: { id: string; name: string; icon: string }[] };
 type Round = { name: string; order: number; matches: Match[] };
@@ -126,8 +127,12 @@ export default function FixtureBrackets({ sports }: { sports: string[] }) {
         <span>M{matchNo(m.id)}</span>
         <span>{m.status === 'completed' ? 'Done' : m.status === 'bye' ? 'Advances' : `${fmt(m.date || '').replace(/ \d{4}$/, '')}${m.time ? ' · ' + fmtTime(m.time) : ''}`}</span>
       </div>
-      <Side id={m.p1} match={m} />
-      <Side id={m.p2} match={m} />
+      {m.kind === 'event'
+        ? ([['🥇', m.winner], ['🥈', m.second], ['🥉', m.third]] as const).map(([medal, id]) => {
+          const p = id ? players.get(resolve(id)) : undefined;
+          return <div className={`${s.side} ${p ? s.won : s.pending}`} key={medal}>{medal} {p ? p.name : 'TBD'}</div>;
+        })
+        : <><Side id={m.p1} match={m} /><Side id={m.p2} match={m} /></>}
       {(m.score || m.venue) && <div className={s.foot}>{[m.score, m.venue].filter(Boolean).join(' · ')}</div>}
     </div>
   );

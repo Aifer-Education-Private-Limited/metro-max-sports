@@ -6,6 +6,8 @@ export interface Match {
   id: string; sport: string; category: string; round: string; roundOrder: number;
   date: string; time: string; venue: string; p1: string; p2: string;
   status: MatchStatus; winner: string; score: string; sourceSheet?: number | ''; completedAt?: string;
+  /** 'event' = placings-only event (no 1v1 participants); default is a regular match. */
+  kind?: 'match' | 'event'; second?: string; third?: string;
   [extra: string]: unknown;
 }
 export interface Award { id: string; sport: string; category: string; team: Team; place: string; points: number; [extra: string]: unknown }

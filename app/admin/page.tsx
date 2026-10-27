@@ -89,11 +89,11 @@ function MatchesTab({ edit }: { edit: (m?: Match) => void }) {
           <tbody>
             {ms.length ? ms.map(m => (
               <tr key={m.id}>
-                <td data-label="Match"><div className="mini">{si(m.sport, db)}{m.sport} · {m.category}</div><SlotLink id={m.p1} /> <span className="muted">vs</span> <SlotLink id={m.p2} /></td>
+                <td data-label="Match"><div className="mini">{si(m.sport, db)}{m.sport} · {m.category}</div>{m.kind === 'event' ? <span className="muted">Placings event</span> : <><SlotLink id={m.p1} /> <span className="muted">vs</span> <SlotLink id={m.p2} /></>}</td>
                 <td data-label="When">{fmt(m.date)}<div className="mini">{fmtTime(m.time)}</div></td>
                 <td data-label="Round">{m.round}</td>
                 <td data-label="Status"><span className={tagClass(m.status)}>{statusLabel(m.status)}</span></td>
-                <td data-label="Winner">{m.winner ? <SlotLink id={m.winner} /> : '—'}{m.score && <div className="mini">{m.score}</div>}</td>
+                <td data-label="Winner">{m.winner ? <SlotLink id={m.winner} /> : '—'}{m.second ? <div className="mini">🥈 <SlotLink id={m.second} /></div> : null}{m.third ? <div className="mini">🥉 <SlotLink id={m.third} /></div> : null}{m.score && <div className="mini">{m.score}</div>}</td>
                 <td data-label="Action"><button className="textlink" onClick={() => edit(m)}>Edit / result</button></td>
               </tr>
             )) : <tr><td colSpan={6} className="empty">No matches found.</td></tr>}

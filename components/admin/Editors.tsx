@@ -35,8 +35,13 @@ const TeamSelect = ({ value, onChange, allowTbd = true }: { value: string; onCha
 export function MatchEditor({ match, defaults, onClose }: { match?: Match; defaults?: Partial<Match>; onClose: () => void }) {
   const { db, call, saving } = useTournament();
   const [m, setM] = useState<Match>(match ? { ...match } : {
-    id: '', sport: db.sports[0]?.name || '', category: '', round: 'Round 1', roundOrder: 1, date: '', time: '', venue: '', p1: '', p2: '', status: 'scheduled', winner: '', score: '', ...defaults,
+    id: '', sport: db.sports[0]?.name || '', category: '', round: 'Round 1', roundOrder: 1, date: '', time: '', venue: '', p1: '', p2: '', status: 'scheduled', winner: '', second: '', third: '', kind: 'match', score: '', ...defaults,
   });
+  const isEvent = (m.kind || 'match') === 'event';
+  const setKind = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const kind = e.target.value as Match['kind'];
+    setM(kind === 'event' ? { ...m, kind, p1: '', p2: '', status: m.status === 'bye' ? 'scheduled' : m.status } : { ...m, kind, second: '', third: '' });
+  };
   const set = (k: keyof Match) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setM({ ...m, [k]: k === 'roundOrder' ? Number(e.target.value) : e.target.value });
   const rounds = ['Round 1', 'Round 2', 'Round 3', 'Round 4', 'Round 5', 'Round of 16', 'Quarter-final', 'Semi-final', 'Final', 'Third-place', 'League', 'Playoff'];
   const setRound = (round: string) => setM({ ...m, round, roundOrder: rounds.indexOf(round) + 1 || m.roundOrder || 1 });
@@ -71,14 +76,31 @@ export function MatchEditor({ match, defaults, onClose }: { match?: Match; defau
         <label className="field">Date<input className="input" type="date" name="date" value={m.date} onChange={set('date')} /></label>
         <label className="field">Time<input className="input" type="time" name="time" value={m.time} onChange={set('time')} /></label>
         <label className="field full">Venue<input className="input" name="venue" value={m.venue} onChange={set('venue')} placeholder="Court / hall" /></label>
-        <label className="field">Participant 1{slot('p1')}</label>
-        <label className="field">Participant 2{slot('p2')}</label>
-        <label className="field">Status<select className="select" name="status" value={m.status} onChange={set('status')}><option value="scheduled">Scheduled</option><option value="completed">Completed</option><option value="bye">Bye / advance</option></select></label>
-        <label className="field">Winner
-          <select className="select" name="winner" value={m.winner} onChange={set('winner')} disabled={m.status !== 'completed'}>
-            <option value="">No result yet</option>{winners.map(v => <option key={v} value={v}>{slotName(db, v)}</option>)}
+        <label className="field">Type
+          <select className="select" name="kind" value={m.kind || 'match'} onChange={setKind}>
+            <option value="match">Match (1 vs 1)</option>
+            <option value="event">Event · placings only (no participants)</option>
           </select>
         </label>
+        {!isEvent && <label className="field">Participant 1{slot('p1')}</label>}
+        {!isEvent && <label className="field">Participant 2{slot('p2')}</label>}
+        <label className="field">Status<select className="select" name="status" value={m.status} onChange={set('status')}><option value="scheduled">Scheduled</option><option value="completed">Completed</option>{!isEvent && <option value="bye">Bye / advance</option>}</select></label>
+        {isEvent ? (
+          ([['winner', '1st place'], ['second', '2nd place'], ['third', '3rd place']] as const).map(([k, label]) => (
+            <label className="field" key={k}>{label}
+              <select className="select" name={k} value={m[k] || ''} onChange={set(k)} disabled={m.status !== 'completed'} required={k === 'winner' && m.status === 'completed'}>
+                <option value="">{k === 'winner' ? 'Choose 1st place' : '—'}</option>
+                {players.filter(p => ![m.winner, m.second, m.third].includes(p.id) || m[k] === p.id).map(p => <option key={p.id} value={p.id}>{p.name} ({p.team ? teamName(p.team) : 'TBD'})</option>)}
+              </select>
+            </label>
+          ))
+        ) : (
+          <label className="field">Winner
+            <select className="select" name="winner" value={m.winner} onChange={set('winner')} disabled={m.status !== 'completed'}>
+              <option value="">No result yet</option>{winners.map(v => <option key={v} value={v}>{slotName(db, v)}</option>)}
+            </select>
+          </label>
+        )}
         <label className="field full">Score / notes<input className="input" name="score" value={m.score} onChange={set('score')} placeholder="e.g. 21–15, 21–18" /></label>
         <p className="mini full">Changing participants or the winner clears results of later rounds that depend on this match.</p>
         <Actions saving={saving} onDelete={match ? del : undefined} />

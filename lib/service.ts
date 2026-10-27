@@ -120,10 +120,12 @@ export const players: CollectionSpec<Player> = {
   build: (b, _db, ex) => ({ ...ex, id: ex?.id || '', name: required(str(b.name), 'Name'), flat: str(b.flat, 50), team: team(b.team) }),
   beforeDelete(db, p) {
     for (const m of db.matches) {
-      if (![m.p1, m.p2, m.winner].includes(p.id)) continue;
+      if (![m.p1, m.p2, m.winner, m.second, m.third].includes(p.id)) continue;
       if (m.p1 === p.id) m.p1 = '';
       if (m.p2 === p.id) m.p2 = '';
       if (m.winner === p.id) { m.winner = ''; m.score = ''; }
+      if (m.second === p.id) m.second = '';
+      if (m.third === p.id) m.third = '';
       if (!m.winner) m.status = 'scheduled';
       clearDownstream(db, m.id);
     }
@@ -139,12 +141,32 @@ export const matches: CollectionSpec<Match> = {
       if (s.startsWith('winner:') ? !db.matches.some(m => m.id === s.slice(7)) : !db.players.some(p => p.id === s)) throw new ApiError(`Unknown participant or match: ${s}`);
       return s;
     };
+    const kind = str(b.kind) === 'event' ? 'event' : 'match';
     const status = str(b.status) as MatchStatus;
     if (!['scheduled', 'completed', 'bye'].includes(status)) throw new ApiError('Status must be scheduled, completed or bye.');
-    const p1 = slot(b.p1), p2 = slot(b.p2);
+    if (kind === 'event' && status === 'bye') throw new ApiError('A placings event cannot be a bye.');
+    const p1 = kind === 'event' ? '' : slot(b.p1), p2 = kind === 'event' ? '' : slot(b.p2);
     if (p1 && p1 === p2 && p1 !== 'BYE') throw new ApiError('Choose two different participants.');
-    const winner = status === 'completed' ? str(b.winner, 300) : status === 'bye' ? (p1 === 'BYE' ? p2 : p1) : '';
-    if (status === 'completed' && !winner) throw new ApiError('Choose a winner before completing this match.');
+    const placement = (v: unknown, label: string) => {
+      const s = str(v, 300);
+      if (!s) return '';
+      if (s === 'BYE' || s.startsWith('winner:') || !db.players.some(p => p.id === s)) throw new ApiError(`${label} must be a participant.`);
+      return s;
+    };
+    let winner = '', second = '', third = '';
+    if (status === 'bye') winner = p1 === 'BYE' ? p2 : p1;
+    else if (status === 'completed') {
+      if (kind === 'event') {
+        winner = required(placement(b.winner, '1st place'), '1st place');
+        second = placement(b.second, '2nd place');
+        third = placement(b.third, '3rd place');
+        const placed = [winner, second, third].filter(Boolean);
+        if (new Set(placed).size !== placed.length) throw new ApiError('Choose different participants for each placing.');
+      } else {
+        winner = str(b.winner, 300);
+        if (!winner) throw new ApiError('Choose a winner before completing this match.');
+      }
+    }
     if (status === 'bye' && ![p1, p2].includes('BYE')) throw new ApiError('A bye requires one BYE slot.');
     const date = str(b.date, 10), time = str(b.time, 5);
     if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new ApiError('Date must be YYYY-MM-DD.');
@@ -154,12 +176,12 @@ export const matches: CollectionSpec<Match> = {
     return {
       ...ex, id: ex?.id || '', sport, category: required(str(b.category), 'Category'),
       round: required(str(b.round, 100), 'Round'), roundOrder: num(b.roundOrder ?? 1, 'Round order', 1, 20), date, time,
-      venue: str(b.venue, 200), p1, p2, status, winner, score: str(b.score, 500), sourceSheet: ex?.sourceSheet ?? '',
+      venue: str(b.venue, 200), p1, p2, status, winner, second, third, kind, score: str(b.score, 500), sourceSheet: ex?.sourceSheet ?? '',
       completedAt: status === 'completed' ? str(ex?.completedAt, 40) || new Date().toISOString() : '',
     };
   },
   afterUpdate(db, before, after) {
-    if (before.p1 !== after.p1 || before.p2 !== after.p2 || before.winner !== after.winner || before.status !== after.status) clearDownstream(db, after.id);
+    if (before.p1 !== after.p1 || before.p2 !== after.p2 || before.winner !== after.winner || before.second !== after.second || before.third !== after.third || before.status !== after.status) clearDownstream(db, after.id);
   },
   beforeDelete(db, m) {
     if (db.matches.some(x => [x.p1, x.p2].includes('winner:' + m.id))) throw new ApiError('This match feeds another round. Change the later match slots before deleting it.', 409);

@@ -49,7 +49,8 @@ export function slotName(db: Tournament, id: string): string {
   return p ? `${p.name} · ${teamName(p.team)}` : 'TBD';
 }
 
-export const playsIn = (db: Tournament, m: Match, pid: string) => resolveSlot(db, m.p1) === pid || resolveSlot(db, m.p2) === pid;
+export const playsIn = (db: Tournament, m: Match, pid: string) =>
+  resolveSlot(db, m.p1) === pid || resolveSlot(db, m.p2) === pid || m.winner === pid || m.second === pid || m.third === pid;
 
 /** Clears results of every later match that depends (directly or indirectly) on `mid`. Mutates `db`. */
 export function clearDownstream(db: Tournament, mid: string) {
@@ -62,6 +63,8 @@ export function clearDownstream(db: Tournament, mid: string) {
       if ([m.p1, m.p2].some(v => v.startsWith('winner:') && changed.has(v.slice(7)))) {
         changed.add(m.id);
         m.winner = '';
+        m.second = '';
+        m.third = '';
         m.score = '';
         m.status = [m.p1, m.p2].includes('BYE') ? 'bye' : 'scheduled';
         added = true;

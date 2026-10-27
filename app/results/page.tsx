@@ -16,8 +16,11 @@ export default function Results() {
         {ms.length ? ms.map(m => (
           <div className="resultrow" key={m.id}>
             <div className="mini">{fmt(m.date)} · {fmtTime(m.time)} · {m.sport} · {m.category} · {m.round}</div>
-            <strong><SlotLink id={m.p1} /> vs <SlotLink id={m.p2} /></strong>
-            <span className="tag green">Winner: {slotName(db, m.winner)}</span> <CheerButton who={slotName(db, m.winner)} /> <span className="muted">{m.score}</span>
+            <strong>{m.kind === 'event' ? 'Placings' : <><SlotLink id={m.p1} /> vs <SlotLink id={m.p2} /></>}</strong>
+            <span className="tag green">{m.kind === 'event' ? '🥇' : 'Winner:'} {slotName(db, m.winner)}</span> <CheerButton who={slotName(db, m.winner)} />
+            {m.second ? <span className="tag">🥈 {slotName(db, m.second)}</span> : null}
+            {m.third ? <span className="tag">🥉 {slotName(db, m.third)}</span> : null}
+            {' '}<span className="muted">{m.score}</span>
           </div>
         )) : <div className="empty">No results found. Try different filters!</div>}
       </div>
