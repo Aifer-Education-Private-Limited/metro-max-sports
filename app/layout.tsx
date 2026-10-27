@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import Script from 'next/script';
 import Shell from '@/components/Shell';
 import TournamentProvider from '@/components/TournamentProvider';
 import './globals.css';
@@ -29,6 +30,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
+        <Script async src="https://www.googletagmanager.com/gtag/js?id=G-W9NGS2S2NB" strategy="afterInteractive" />
+        <Script id="gtag-init" strategy="afterInteractive">{`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-W9NGS2S2NB');
+        `}</Script>
         <TournamentProvider>
           <Shell>{children}</Shell>
         </TournamentProvider>
